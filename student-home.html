@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina | Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --accent-purple: #7000ff;
+            --accent-blue: #00d4ff;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-main: #ffffff;
+            --text-dim: #a0a0a0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Sophisticated Background Layers */
+        .ambient-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(circle at 10% 10%, rgba(112, 0, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 90% 90%, rgba(0, 212, 255, 0.05) 0%, transparent 50%);
+        }
+
+        /* Navigation */
+        nav {
+            padding: 25px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-weight: 800;
+            letter-spacing: 3px;
+            font-size: 1.4rem;
+            background: linear-gradient(to right, #fff, var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .user-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 0.9rem;
+        }
+
+        .api-badge {
+            background: rgba(0, 212, 255, 0.1);
+            color: var(--accent-blue);
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            font-weight: 600;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Layout Container */
+        main {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 0 50px;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+        }
+
+        /* Header Section */
+        .welcome-section {
+            grid-column: 1 / -1;
+            margin-bottom: 20px;
+        }
+
+        .welcome-section h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .welcome-section p {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+        }
+
+        /* Content Cards */
+        .glass-panel {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            backdrop-filter: blur(40px);
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Focus Subjects Chips */
+        .subjects-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .subject-tag {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            border: 1px solid var(--glass-border);
+            color: var(--text-dim);
+        }
+
+        /* Study + Feature */
+        .study-plus {
+            margin-top: 30px;
+            background: linear-gradient(135deg, rgba(112, 0, 255, 0.1), rgba(0, 212, 255, 0.05));
+            border: 1px solid rgba(112, 0, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .study-plus::after {
+            content: '+';
+            position: absolute;
+            right: -20px;
+            bottom: -40px;
+            font-size: 10rem;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.03);
+            pointer-events: none;
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--glass-border);
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent-blue);
+            background: rgba(0, 212, 255, 0.02);
+        }
+
+        .btn-primary {
+            background: var(--accent-purple);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 15px;
+        }
+
+        .btn-primary:hover { transform: scale(1.02); }
+
+        /* Roadmap Visualization */
+        .roadmap-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .roadmap-item {
+            display: flex;
+            gap: 20px;
+            padding-bottom: 20px;
+            border-left: 2px solid var(--glass-border);
+            margin-left: 10px;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .roadmap-item::before {
+            content: '';
+            position: absolute;
+            left: -6px;
+            top: 0;
+            width: 10px;
+            height: 10px;
+            background: var(--accent-purple);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-purple);
+        }
+
+        .roadmap-content h4 { font-size: 0.95rem; margin-bottom: 5px; }
+        .roadmap-content p { font-size: 0.8rem; color: var(--text-dim); }
+
+        /* Right Sidebar Stats */
+        .sidebar-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            padding: 20px;
+            border-radius: 20px;
+        }
+
+        .stat-val { font-size: 1.5rem; font-weight: 800; color: var(--accent-blue); }
+        .stat-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+
+    </style>
+</head>
+<body>
+
+    <div class="ambient-bg"></div>
+
+    <nav>
+        <div class="logo">LUMINA</div>
+        <div class="user-status">
+            <div class="api-badge">
+                <i data-lucide="zap" size="14"></i>
+                AI ACTIVE
+            </div>
+            <div id="nav-user-name" style="font-weight: 600;">Student</div>
+            <div style="width: 35px; height: 35px; border-radius: 50%; background: var(--accent-purple); display: flex; align-items: center; justify-content: center; font-weight: bold;" id="user-initial">
+                S
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="welcome-section">
+            <h1 id="greeting">Hello, Explorer</h1>
+            <p>Welcome back to your personalized mastery dashboard.</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Focus Challenges -->
+            <div class="glass-panel">
+                <div class="panel-title">
+                    <i data-lucide="target" style="color: var(--accent-purple);"></i>
+                    Your Focus Challenges
+                </div>
+                <p style="font-size: 0.9rem; color: var(--text-dim);">AI has prioritized these subjects based on your profile.</p>
+                <div class="subjects-row" id="subject-container">
+                    <!-- Chips injected here -->
+                </div>
+            </div>
+
+            <!-- Study + Feature -->
+            <div class="glass-panel study-plus">
+                <div class="panel-title">
+                    <i data-lucide="sparkles" style="color: var(--accent-blue);"></i>
+                    Study +
+                </div>
+                <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 20px;">
+                    Upload a chapter PDF or paste notes. Lumina AI will break it down into a visual roadmap.
+                </p>
+                
+                <div class="upload-zone" onclick="triggerUpload()">
+                    <i data-lucide="file-up" size="40" style="color: var(--text-dim); margin-bottom: 10px;"></i>
+                    <p>Drop your study material here</p>
+                    <span style="font-size: 0.7rem; color: var(--text-dim);">PDF, TXT, or Image (Max 10MB)</span>
+                    <br>
+                    <button class="btn-primary">Analyze Material</button>
+                </div>
+            </div>
+
+            <!-- Mastery Roadmap -->
+            <div class="glass-panel" style="margin-top: 30px;">
+                <div class="panel-title">
+                    <i data-lucide="map" style="color: var(--accent-purple);"></i>
+                    Mastery Roadmap
+                </div>
+                <div class="roadmap-container">
+                    <div class="roadmap-item">
+                        <div class="roadmap-content">
+                            <h4>Foundation Setup</h4>
+                            <p>Completed onboarding and AI calibration.</p>
+                        </div>
+                    </div>
+                    <div class="roadmap-item" style="border-color: transparent;">
+                        <div class="roadmap-content">
+                            <h4 style="color: var(--accent-blue);">Ready for Analysis</h4>
+                            <p>Upload your first topic in "Study +" to generate a dynamic learning path.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <aside class="sidebar-stats">
+            <div class="stat-card">
+                <div class="stat-label">Knowledge Gained</div>
+                <div class="stat-val">0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Challenges</div>
+                <div class="stat-val" id="challenge-count">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Learning Streak</div>
+                <div class="stat-val">1 Day</div>
+            </div>
+            
+            <div class="glass-panel" style="padding: 20px; font-size: 0.85rem;">
+                <div style="font-weight: bold; margin-bottom: 10px;">AI Configuration</div>
+                <div style="color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    Key: <span id="api-preview">••••••••••••</span>
+                </div>
+                <button style="background: none; border: 1px solid var(--glass-border); color: var(--text-dim); width: 100%; padding: 8px; border-radius: 8px; margin-top: 15px; cursor: pointer;">Settings</button>
+            </div>
+        </aside>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Lucide Icons
+            lucide.createIcons();
+
+            // Load Session Data
+            const session = JSON.parse(localStorage.getItem('lumina_session'));
+
+            if (!session || !session.profile) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const { name, subjects, apiKey } = session.profile;
+
+            // Update UI
+            document.getElementById('greeting').innerText = `Hello, ${name}`;
+            document.getElementById('nav-user-name').innerText = name;
+            document.getElementById('user-initial').innerText = name.charAt(0).toUpperCase();
+            document.getElementById('challenge-count').innerText = subjects.length;
+            
+            if (apiKey) {
+                document.getElementById('api-preview').innerText = apiKey.substring(0, 4) + '••••' + apiKey.slice(-4);
+            }
+
+            // Inject Subjects
+            const subjectContainer = document.getElementById('subject-container');
+            subjects.forEach(sub => {
+                const tag = document.createElement('div');
+                tag.className = 'subject-tag';
+                tag.innerText = sub;
+                subjectContainer.appendChild(tag);
+            });
+        });
+
+        function triggerUpload() {
+            // Placeholder for the Study + Logic
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                alert(`Lumina AI is preparing to analyze: ${file.name}. This feature will be linked to your Gemini API in the next update!`);
+            };
+            input.click();
+        }
+    </script>
+</body>
+</html>
