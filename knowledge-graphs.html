@@ -6,7 +6,6 @@
     <title>Lumina | Knowledge Graphs</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Use Cytoscape.js for robust graph visualization -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
     <style>
         :root {
@@ -53,75 +52,53 @@
         .logo-area { display: flex; align-items: center; gap: 15px; cursor: pointer; }
         .logo { font-weight: 800; letter-spacing: 2px; font-size: 1.2rem; background: linear-gradient(to right, #fff, var(--accent-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        .header-info { text-align: center; flex: 1; }
-        .header-info h1 { font-size: 1rem; font-weight: 600; color: var(--text-main); }
-        .header-info p { font-size: 0.75rem; color: var(--text-dim); }
+        main { flex: 1; display: flex; position: relative; }
 
-        main {
-            flex: 1;
-            display: flex;
-            position: relative;
-        }
+        #cy { flex: 1; width: 100%; height: 100%; background: rgba(0,0,0,0.2); }
 
-        /* Graph Container */
-        #cy {
-            flex: 1;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.2);
-        }
-
-        /* Sidebar Overlay */
         .sidebar {
             position: absolute;
             left: 20px;
             top: 20px;
-            bottom: 20px;
-            width: 320px;
-            background: rgba(10, 10, 10, 0.8);
+            width: 300px;
+            background: rgba(10, 10, 10, 0.85);
             border: 1px solid var(--glass-border);
-            border-radius: 24px;
+            border-radius: 20px;
             backdrop-filter: blur(30px);
-            padding: 25px;
+            padding: 20px;
+            z-index: 10;
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            z-index: 10;
+            gap: 15px;
         }
 
         .concept-card {
             background: var(--glass);
             border: 1px solid var(--glass-border);
             padding: 15px;
-            border-radius: 16px;
-            display: none; /* Shown when node clicked */
+            border-radius: 12px;
+            display: none;
         }
-
-        .concept-card h2 { font-size: 1.1rem; margin-bottom: 8px; color: var(--accent-blue); }
-        .concept-card p { font-size: 0.85rem; color: var(--text-dim); line-height: 1.5; }
 
         .btn-generate {
             background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
             color: white;
             border: none;
-            padding: 14px;
-            border-radius: 12px;
+            padding: 12px;
+            border-radius: 10px;
             font-weight: 700;
             cursor: pointer;
+            width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            transition: 0.3s;
         }
 
-        .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        /* Loading States */
         #loader {
             position: absolute;
             inset: 0;
-            background: rgba(5,5,5,0.8);
+            background: rgba(5,5,5,0.7);
             display: none;
             flex-direction: column;
             justify-content: center;
@@ -130,48 +107,36 @@
         }
 
         .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid var(--glass-border);
-            border-top: 4px solid var(--accent-blue);
+            width: 30px;
+            height: 30px;
+            border: 3px solid var(--glass-border);
+            border-top: 3px solid var(--accent-blue);
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin-bottom: 20px;
         }
 
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
 
         .controls {
             position: absolute;
             right: 20px;
             bottom: 20px;
             display: flex;
-            flex-direction: column;
             gap: 10px;
         }
 
         .control-btn {
-            width: 45px;
-            height: 45px;
-            border-radius: 12px;
-            background: var(--glass);
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.05);
             border: 1px solid var(--glass-border);
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            backdrop-filter: blur(10px);
         }
-
-        .legend {
-            margin-top: auto;
-            font-size: 0.75rem;
-            color: var(--text-dim);
-        }
-
-        .legend-item { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; }
     </style>
 </head>
 <body>
@@ -180,221 +145,147 @@
 
     <div id="loader">
         <div class="spinner"></div>
-        <p id="loader-text">AI Mapping Connections...</p>
+        <p style="margin-top: 15px; font-size: 0.9rem;">Building Knowledge Map...</p>
     </div>
 
     <nav>
-        <div class="logo-area" onclick="location.href='student-home.html'">
+        <div class="logo-area" onclick="location.href='dashboard.html'">
             <i data-lucide="arrow-left" size="20"></i>
             <span class="logo">LUMINA</span>
         </div>
-        <div class="header-info">
-            <h1 id="chapter-title">Knowledge Graph</h1>
-            <p id="subject-title">Interdisciplinary Big Picture</p>
+        <div style="text-align: right;">
+            <div id="chapter-name" style="font-weight: 600; font-size: 0.9rem;">Chapter View</div>
+            <div id="subject-name" style="color: var(--text-dim); font-size: 0.7rem; text-transform: uppercase;">Subject</div>
         </div>
-        <div style="width: 100px;"></div> <!-- Spacer -->
     </nav>
 
     <main>
         <div class="sidebar">
-            <div style="flex: 1;">
-                <h3 style="font-size: 1.1rem; margin-bottom: 10px;">The Big Picture</h3>
-                <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 20px;">
-                    This AI-generated graph visualizes how concepts in this chapter connect to other fields of study.
-                </p>
+            <h3 style="font-size: 1rem;">Concept Linker</h3>
+            <p style="font-size: 0.8rem; color: var(--text-dim);">Visualizing how your current chapter connects to the broader world.</p>
+            
+            <button class="btn-generate" id="gen-btn" onclick="generateGraph()">
+                <i data-lucide="zap" size="16"></i>
+                Generate Map
+            </button>
 
-                <div id="initial-state">
-                    <button class="btn-generate" id="gen-btn" onclick="generateGraph()">
-                        <i data-lucide="zap" size="18"></i>
-                        Analyze Connections
-                    </button>
-                </div>
-
-                <div id="concept-card" class="concept-card">
-                    <h2 id="node-label">Concept</h2>
-                    <div id="node-tag" style="display:inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; background: var(--accent-purple); margin-bottom: 10px; text-transform: uppercase;">SUBJECT</div>
-                    <p id="node-desc">Click a node to see the interdisciplinary connection details.</p>
-                </div>
-            </div>
-
-            <div class="legend">
-                <div class="legend-item"><span class="dot" style="background: var(--accent-blue);"></span> Main Topic</div>
-                <div class="legend-item"><span class="dot" style="background: var(--accent-purple);"></span> Related Subject</div>
-                <div class="legend-item"><span class="dot" style="background: #fff;"></span> Key Principle</div>
+            <div id="concept-card" class="concept-card">
+                <h4 id="node-label" style="color: var(--accent-blue); margin-bottom: 5px;">Concept</h4>
+                <div id="node-tag" style="font-size: 0.65rem; background: var(--accent-purple); padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 8px;">SUBJECT</div>
+                <p id="node-desc" style="font-size: 0.8rem; line-height: 1.4; color: var(--text-dim);"></p>
             </div>
         </div>
 
         <div id="cy"></div>
 
         <div class="controls">
-            <button class="control-btn" onclick="cy.zoom(cy.zoom() * 1.2)" title="Zoom In"><i data-lucide="plus" size="20"></i></button>
-            <button class="control-btn" onclick="cy.zoom(cy.zoom() * 0.8)" title="Zoom Out"><i data-lucide="minus" size="20"></i></button>
-            <button class="control-btn" onclick="cy.fit()" title="Reset View"><i data-lucide="maximize" size="20"></i></button>
+            <button class="control-btn" onclick="cy.fit()"><i data-lucide="maximize" size="18"></i></button>
+            <button class="control-btn" onclick="cy.zoom(cy.zoom() * 1.2)"><i data-lucide="plus" size="18"></i></button>
+            <button class="control-btn" onclick="cy.zoom(cy.zoom() * 0.8)"><i data-lucide="minus" size="18"></i></button>
         </div>
     </main>
 
     <script>
         let cy;
-        const apiKey = ""; // Provided by environment
+        const apiKey = ""; 
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             loadContext();
-            initEmptyGraph();
+            initCy();
         });
 
         function loadContext() {
             const plan = JSON.parse(localStorage.getItem('lumina_active_plan'));
             if (plan) {
-                document.getElementById('chapter-title').innerText = plan.currentChapter || "Conceptual Mapping";
-                document.getElementById('subject-title').innerText = `Subject: ${plan.subject}`;
+                document.getElementById('chapter-name').innerText = plan.currentChapter || "New Concept";
+                document.getElementById('subject-name').innerText = plan.subject || "General Study";
             }
         }
 
-        function initEmptyGraph() {
+        function initCy() {
             cy = cytoscape({
                 container: document.getElementById('cy'),
                 style: [
                     {
                         selector: 'node',
                         style: {
-                            'background-color': 'data(color)',
                             'label': 'data(label)',
+                            'background-color': 'data(color)',
                             'color': '#fff',
-                            'font-size': '12px',
+                            'font-size': '10px',
                             'text-valign': 'center',
-                            'text-halign': 'center',
-                            'width': 'mapData(weight, 1, 10, 30, 80)',
-                            'height': 'mapData(weight, 1, 10, 30, 80)',
-                            'text-outline-width': 2,
-                            'text-outline-color': '#000',
-                            'overlay-padding': '6px',
-                            'z-index': '10'
+                            'width': 40,
+                            'height': 40,
+                            'text-outline-width': 1,
+                            'text-outline-color': '#000'
                         }
                     },
                     {
                         selector: 'edge',
                         style: {
-                            'width': 2,
-                            'line-color': 'rgba(255,255,255,0.15)',
-                            'target-arrow-color': 'rgba(255,255,255,0.15)',
-                            'target-arrow-shape': 'triangle',
-                            'curve-style': 'bezier',
-                            'label': 'data(relation)',
-                            'font-size': '8px',
-                            'color': '#a0a0a0',
-                            'text-rotation': 'autorotate',
-                            'text-margin-y': -10
-                        }
-                    },
-                    {
-                        selector: 'node:selected',
-                        style: {
-                            'border-width': 3,
-                            'border-color': '#fff',
-                            'box-shadow': '0 0 15px #00d4ff'
+                            'width': 1,
+                            'line-color': 'rgba(255,255,255,0.2)',
+                            'curve-style': 'haystack'
                         }
                     }
-                ],
-                elements: []
+                ]
             });
 
-            cy.on('tap', 'node', function(evt){
-                const node = evt.target;
-                showDetails(node.data());
+            cy.on('tap', 'node', (e) => {
+                const data = e.target.data();
+                document.getElementById('concept-card').style.display = 'block';
+                document.getElementById('node-label').innerText = data.label;
+                document.getElementById('node-tag').innerText = data.subject;
+                document.getElementById('node-desc').innerText = data.description;
             });
         }
 
         async function generateGraph() {
             const plan = JSON.parse(localStorage.getItem('lumina_active_plan'));
-            const session = JSON.parse(localStorage.getItem('lumina_session'));
-            const userKey = session?.profile?.apiKey || "";
-
             if (!plan) return;
 
             document.getElementById('loader').style.display = 'flex';
-            document.getElementById('gen-btn').disabled = true;
-
-            const prompt = `Analyze the chapter "${plan.currentChapter}" for the subject "${plan.subject}". 
-            Identify 8-10 key concepts and how they connect to OTHER different subjects (Interdisciplinary connections).
-            Return a JSON object with:
-            1. "nodes": array of {id, label, subject, weight (1-10), description, color (hex)}
-            2. "edges": array of {source, target, relation}
-            Color main topic nodes as #00d4ff, interdisciplinary nodes as #7000ff.`;
+            
+            const prompt = `Topic: ${plan.currentChapter} (${plan.subject}). 
+            Create a simple knowledge graph. Return ONLY JSON:
+            {
+              "nodes": [
+                {"id": "n1", "label": "Main Topic", "subject": "Core", "description": "...", "color": "#00d4ff"},
+                {"id": "n2", "label": "Connected Concept", "subject": "History", "description": "How it relates...", "color": "#7000ff"}
+              ],
+              "edges": [{"source": "n1", "target": "n2"}]
+            }
+            Include 6-8 interdisciplinary nodes. Keep descriptions short.`;
 
             try {
-                const response = await callGemini(prompt, userKey);
-                const graphData = JSON.parse(response);
+                const response = await callGemini(prompt);
+                const data = JSON.parse(response);
                 
-                renderGraph(graphData);
-            } catch (error) {
-                console.error(error);
-                alert("Failed to generate graph. Check your API key.");
+                cy.elements().remove();
+                cy.add({
+                    nodes: data.nodes.map(n => ({ data: n })),
+                    edges: data.edges.map(e => ({ data: e }))
+                });
+
+                cy.layout({ name: 'circle', padding: 100 }).run();
+                document.getElementById('gen-btn').innerHTML = '<i data-lucide="refresh-cw" size="16"></i> Re-map';
+                lucide.createIcons();
+            } catch (e) {
+                console.error(e);
             } finally {
                 document.getElementById('loader').style.display = 'none';
             }
         }
 
-        function renderGraph(data) {
-            cy.elements().remove();
-            
-            const elements = {
-                nodes: data.nodes.map(n => ({ data: n })),
-                edges: data.edges.map(e => ({ data: e }))
-            };
-
-            cy.add(elements);
-            
-            cy.layout({
-                name: 'cose', // Force-directed layout
-                animate: true,
-                padding: 50,
-                componentSpacing: 100,
-                nodeRepulsion: 8000
-            }).run();
-
-            document.getElementById('initial-state').style.display = 'none';
-            document.getElementById('concept-card').style.display = 'block';
-            
-            lucide.createIcons();
-        }
-
-        function showDetails(data) {
-            document.getElementById('node-label').innerText = data.label;
-            document.getElementById('node-tag').innerText = data.subject || "General";
-            document.getElementById('node-tag').style.background = data.color || "var(--accent-purple)";
-            document.getElementById('node-desc').innerText = data.description || "No description available.";
-        }
-
-        async function callGemini(prompt, userKey) {
+        async function callGemini(prompt) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-            
-            const payload = {
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                    responseMimeType: "application/json"
-                }
-            };
-
-            // Implement exponential backoff as per instructions
-            let retries = 0;
-            const maxRetries = 5;
-            
-            while (retries <= maxRetries) {
-                try {
-                    const res = await fetch(url, {
-                        method: 'POST',
-                        body: JSON.stringify(payload)
-                    });
-                    const data = await res.json();
-                    return data.candidates[0].content.parts[0].text;
-                } catch (e) {
-                    if (retries === maxRetries) throw e;
-                    const delay = Math.pow(2, retries) * 1000;
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    retries++;
-                }
-            }
+            const res = await fetch(url, {
+                method: 'POST',
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } })
+            });
+            const data = await res.json();
+            return data.candidates[0].content.parts[0].text;
         }
     </script>
 </body>
