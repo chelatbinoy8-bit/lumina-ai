@@ -136,8 +136,8 @@
         #quiz-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.92);
-            backdrop-filter: blur(12px);
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(15px);
             display: none;
             justify-content: center;
             align-items: center;
@@ -150,7 +150,16 @@
             padding: 40px;
             border-radius: 32px;
             width: 90%;
-            max-width: 550px;
+            max-width: 600px;
+            position: relative;
+        }
+
+        .quiz-progress {
+            position: absolute;
+            top: 0; left: 0; height: 4px;
+            background: var(--accent-blue);
+            border-radius: 4px 4px 0 0;
+            transition: width 0.3s ease;
         }
 
         .quiz-option {
@@ -162,6 +171,9 @@
             cursor: pointer;
             transition: all 0.2s ease;
             color: var(--text-main);
+            text-align: left;
+            width: 100%;
+            font-size: 1rem;
         }
 
         .quiz-option:hover { 
@@ -202,8 +214,8 @@
             Progress Insights
         </div>
         <div id="feedback-area">
-            <div class="feedback-card" style="color: var(--text-dim); border-style: dashed;">
-                The summary is ready. Once you feel confident, click the quiz button at the bottom.
+            <div id="initial-instruction" class="feedback-card" style="color: var(--text-dim); border-style: dashed;">
+                Preparing insights for your current topic...
             </div>
         </div>
         <button onclick="location.href='dashboard.html'" style="margin-top: auto; background: var(--glass); border: 1px solid var(--glass-border); color: white; padding: 14px; border-radius: 14px; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
@@ -215,7 +227,7 @@
     <main class="content-area">
         <div id="loading">
             <i data-lucide="loader-2" size="48" class="spin" style="color: var(--accent-blue); margin-bottom: 24px;"></i>
-            <h2 style="font-weight: 700;">Analyzing Syllabus...</h2>
+            <h2 style="font-weight: 700;">Analyzing Chapter Data...</h2>
         </div>
 
         <div class="summary-container" id="summary-content" style="display: none;">
@@ -226,17 +238,21 @@
             
             <div id="dynamic-text"></div>
             
-            <button id="start-quiz-btn" class="btn-quiz" style="display: none;" onclick="openQuiz()">
-                <i data-lucide="zap"></i>
-                Unlock Topic Quiz
+            <button id="start-quiz-btn" class="btn-quiz" style="display: none;" onclick="startQuiz()">
+                <i data-lucide="play-circle"></i>
+                Start Topic Assessment
             </button>
         </div>
     </main>
 
     <div id="quiz-overlay">
         <div class="quiz-card">
-            <span style="font-size: 0.7rem; color: var(--accent-yellow); font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">Topic Challenge</span>
-            <h2 id="quiz-question" style="margin: 20px 0; font-size: 1.4rem; line-height: 1.4;"></h2>
+            <div id="quiz-progress-bar" class="quiz-progress" style="width: 0%"></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <span id="quiz-counter" style="font-size: 0.7rem; color: var(--accent-yellow); font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">Question 1</span>
+                <button onclick="closeQuiz()" style="background: none; border: none; color: var(--text-dim); cursor: pointer;"><i data-lucide="x" size="18"></i></button>
+            </div>
+            <h2 id="quiz-question" style="margin-bottom: 30px; font-size: 1.4rem; line-height: 1.4;"></h2>
             <div id="quiz-options"></div>
         </div>
     </div>
@@ -244,18 +260,31 @@
     <script>
         const groqKey = localStorage.getItem('lumina_groq_key');
         const plan = JSON.parse(localStorage.getItem('lumina_active_plan'));
-        const activeIdx = localStorage.getItem('lumina_active_chapter_index') || 0;
+        // FIX: Ensure activeIdx is parsed as a number correctly
+        const activeIdx = parseInt(localStorage.getItem('lumina_active_chapter_index')) || 0;
         
-        let storedQuizData = null;
+        let quizPool = [];
+        let currentQuestionIdx = 0;
+        let score = 0;
 
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
-            if (plan && plan.chapters[activeIdx]) {
+            
+            // Validate that plan exists and index is within bounds
+            if (plan && plan.chapters && plan.chapters[activeIdx]) {
                 const targetChapter = plan.chapters[activeIdx];
+                
+                // Update UI with correct Chapter Title
                 document.getElementById('chapter-title').innerText = targetChapter.title;
                 document.getElementById('sub-tag').innerText = plan.subject;
+                
+                // Update Sidebar Instruction
+                document.getElementById('initial-instruction').innerText = `Review the summary for "${targetChapter.title}" thoroughly. A custom quiz will be available once the content is loaded.`;
+
                 await generateSummaries(targetChapter);
             } else {
+                console.error("No active chapter found at index:", activeIdx);
+                // Fallback to dashboard if data is missing
                 window.location.href = 'dashboard.html';
             }
         });
@@ -273,28 +302,48 @@
                         messages: [
                             {
                                 role: "system",
-                                content: `You are an AI teacher. 
+                                content: `You are an expert tutor. Create a detailed study summary for the specific topic provided.
                                 Rule 1: Output JSON. 
-                                Rule 2: NEVER include HTML tags in the text fields (definitions, points, quiz question, etc.). 
-                                Rule 3: Strictly follow the syllabus details.
-                                JSON Schema: { "definitions": [{"term":"", "definition":""}], "points": [{"text":"", "isHighlighted":boolean}], "extra_facts": [{"title":"", "text":""}], "narrative": "", "sudden_quiz": {"question":"", "options":[], "correct_index":0, "explanation":""} }`
+                                Rule 2: Use Markdown for formatting inside the strings if needed, but DO NOT use HTML tags. 
+                                Rule 3: Ensure the content is SPECIFIC to the chapter details provided.
+                                JSON Schema: { 
+                                  "definitions": [{"term":"", "definition":""}], 
+                                  "points": [{"text":"", "isHighlighted":boolean}], 
+                                  "extra_facts": [{"title":"", "text":""}], 
+                                  "narrative": "", 
+                                  "quiz_questions": [
+                                    {"question":"", "options":[], "correct_index":0, "explanation":""}
+                                  ] 
+                                }`
                             },
                             {
                                 role: "user",
-                                content: `Subject: ${plan.subject}. Topic: ${chapter.title}. Syllabus Details: ${chapter.details}.`
+                                content: `Subject: ${plan.subject}. 
+                                Specific Chapter Title: ${chapter.title}. 
+                                Detailed Syllabus/Context for this Chapter: ${chapter.details || 'General overview of ' + chapter.title}.`
                             }
                         ],
                         response_format: { type: "json_object" }
                     })
                 });
 
+                if (!response.ok) throw new Error("API request failed");
+
                 const data = await response.json();
                 const content = JSON.parse(data.choices[0].message.content);
-                storedQuizData = content.sudden_quiz;
+                quizPool = content.quiz_questions;
                 renderContent(content);
 
             } catch (err) {
-                document.getElementById('loading').innerHTML = "<h3>Sync Error</h3><p>Ensure your API key is valid.</p>";
+                console.error(err);
+                document.getElementById('loading').innerHTML = `
+                    <div style="color: #ff4b4b; padding: 20px; border: 1px solid #ff4b4b; border-radius: 12px; background: rgba(255, 75, 75, 0.05);">
+                        <i data-lucide="alert-circle" style="margin-bottom: 10px;"></i>
+                        <h3>Content Generation Error</h3>
+                        <p>We couldn't reach the AI tutor. Please check your internet connection and verify your Groq API Key.</p>
+                        <button onclick="location.reload()" style="margin-top: 15px; padding: 8px 16px; border-radius: 8px; cursor: pointer;">Retry</button>
+                    </div>`;
+                lucide.createIcons();
             }
         }
 
@@ -304,24 +353,29 @@
             const container = document.getElementById('dynamic-text');
             let html = ``;
 
-            if(data.definitions?.length > 0) {
+            if(data.definitions && data.definitions.length > 0) {
+                html += `<h3 style="margin: 20px 0 10px; font-weight: 800; color: var(--accent-blue);">Key Terms</h3>`;
                 data.definitions.forEach(d => {
                     html += `<div class="definition-box"><strong>${d.term}</strong><p>${d.definition}</p></div>`;
                 });
             }
 
-            html += `<h3 style="margin: 40px 0 20px; font-weight: 800; color: var(--accent-blue);">Core Concepts</h3>`;
-            data.points.forEach((p, i) => {
-                const text = p.isHighlighted ? `<span class="highlight-yellow">${p.text}</span>` : p.text;
-                html += `<div class="main-point"><span class="point-bullet">${(i+1)}</span><div>${text}</div></div>`;
-            });
+            if(data.points && data.points.length > 0) {
+                html += `<h3 style="margin: 40px 0 20px; font-weight: 800; color: var(--accent-blue);">Core Concepts</h3>`;
+                data.points.forEach((p, i) => {
+                    const text = p.isHighlighted ? `<span class="highlight-yellow">${p.text}</span>` : p.text;
+                    html += `<div class="main-point"><span class="point-bullet">${(i+1)}</span><div>${text}</div></div>`;
+                });
+            }
 
-            html += `<h3 style="margin: 40px 0 20px; font-weight: 800; color: var(--accent-blue);">Theory Walkthrough</h3>`;
-            html += `<div style="line-height: 1.8; color: #ccc; font-size: 1.1rem; margin-bottom: 40px;">${data.narrative}</div>`;
+            if(data.narrative) {
+                html += `<h3 style="margin: 40px 0 20px; font-weight: 800; color: var(--accent-blue);">In-Depth Analysis</h3>`;
+                html += `<div style="line-height: 1.8; color: #ccc; font-size: 1.1rem; margin-bottom: 40px;">${data.narrative}</div>`;
+            }
 
-            if(data.extra_facts?.length > 0) {
+            if(data.extra_facts && data.extra_facts.length > 0) {
                 data.extra_facts.forEach(f => {
-                    html += `<div class="extra-fact-box"><span class="extra-fact-tag">Extra Fact: ${f.title}</span><p>${f.text}</p></div>`;
+                    html += `<div class="extra-fact-box"><span class="extra-fact-tag">Deep Dive: ${f.title}</span><p>${f.text}</p></div>`;
                 });
             }
 
@@ -330,41 +384,76 @@
             lucide.createIcons();
         }
 
-        function openQuiz() {
-            if (!storedQuizData) return;
-            const overlay = document.getElementById('quiz-overlay');
-            document.getElementById('quiz-question').innerText = storedQuizData.question;
+        function startQuiz() {
+            if (!quizPool || quizPool.length === 0) return;
+            currentQuestionIdx = 0;
+            score = 0;
+            document.getElementById('feedback-area').innerHTML = ''; 
+            showQuestion();
+            document.getElementById('quiz-overlay').style.display = 'flex';
+        }
+
+        function showQuestion() {
+            const q = quizPool[currentQuestionIdx];
+            document.getElementById('quiz-counter').innerText = `Question ${currentQuestionIdx + 1} of ${quizPool.length}`;
+            document.getElementById('quiz-question').innerText = q.question;
+            document.getElementById('quiz-progress-bar').style.width = `${((currentQuestionIdx) / quizPool.length) * 100}%`;
+            
             const optContainer = document.getElementById('quiz-options');
             optContainer.innerHTML = '';
             
-            storedQuizData.options.forEach((opt, idx) => {
-                const div = document.createElement('div');
-                div.className = 'quiz-option';
-                div.innerText = opt;
-                div.onclick = () => selectAnswer(idx);
-                optContainer.appendChild(div);
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-option';
+                btn.innerText = opt;
+                btn.onclick = () => handleAnswer(idx);
+                optContainer.appendChild(btn);
             });
-
-            overlay.style.display = 'flex';
         }
 
-        function selectAnswer(idx) {
-            document.getElementById('quiz-overlay').style.display = 'none';
-            const isCorrect = idx === storedQuizData.correct_index;
-            const feedback = document.getElementById('feedback-area');
+        function handleAnswer(selectedIdx) {
+            const q = quizPool[currentQuestionIdx];
+            const isCorrect = selectedIdx === q.correct_index;
+            if (isCorrect) score++;
 
+            const feedback = document.getElementById('feedback-area');
             const card = document.createElement('div');
             card.className = `feedback-card ${isCorrect ? 'feedback-correct' : 'feedback-wrong'}`;
             card.innerHTML = `
                 <div style="font-weight: 800; margin-bottom: 5px; color: ${isCorrect ? 'var(--accent-green)' : '#ff4b4b'}">
-                    ${isCorrect ? 'Concept Mastered' : 'Needs Review'}
+                    Q${currentQuestionIdx + 1}: ${isCorrect ? 'Correct' : 'Incorrect'}
                 </div>
-                <p style="color: white; font-size: 0.85rem;">${storedQuizData.explanation}</p>
+                <p style="color: white; font-size: 0.85rem; opacity: 0.9;">${q.explanation}</p>
             `;
             feedback.prepend(card);
-            
-            // Auto-scroll to top of sidebar to see feedback
             feedback.scrollTop = 0;
+
+            currentQuestionIdx++;
+
+            if (currentQuestionIdx < quizPool.length) {
+                showQuestion();
+            } else {
+                finishQuiz();
+            }
+        }
+
+        function finishQuiz() {
+            document.getElementById('quiz-overlay').style.display = 'none';
+            const feedback = document.getElementById('feedback-area');
+            const resultCard = document.createElement('div');
+            resultCard.className = 'feedback-card';
+            resultCard.style.background = 'var(--accent-purple)';
+            resultCard.style.borderColor = 'transparent';
+            resultCard.innerHTML = `
+                <div style="font-weight: 900; font-size: 1.1rem; margin-bottom: 8px;">Chapter Assessment Complete!</div>
+                <div style="font-size: 1.5rem; font-weight: 800; margin-bottom: 10px;">${score} / ${quizPool.length}</div>
+                <p style="font-size: 0.8rem; opacity: 0.9;">You've finished the review for "${plan.chapters[activeIdx].title}".</p>
+            `;
+            feedback.prepend(resultCard);
+        }
+
+        function closeQuiz() {
+            document.getElementById('quiz-overlay').style.display = 'none';
         }
     </script>
 </body>
