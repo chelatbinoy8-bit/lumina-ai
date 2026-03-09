@@ -54,51 +54,59 @@
 
         main { flex: 1; display: flex; position: relative; }
 
-        #cy { flex: 1; width: 100%; height: 100%; background: rgba(0,0,0,0.2); }
+        #cy { flex: 1; width: 100%; height: 100%; background: transparent; }
 
         .sidebar {
             position: absolute;
             left: 20px;
             top: 20px;
-            width: 300px;
-            background: rgba(10, 10, 10, 0.85);
+            width: 320px;
+            background: rgba(10, 10, 10, 0.9);
             border: 1px solid var(--glass-border);
-            border-radius: 20px;
+            border-radius: 24px;
             backdrop-filter: blur(30px);
-            padding: 20px;
+            padding: 25px;
             z-index: 10;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         }
 
         .concept-card {
-            background: var(--glass);
+            background: rgba(255,255,255,0.05);
             border: 1px solid var(--glass-border);
-            padding: 15px;
-            border-radius: 12px;
+            padding: 20px;
+            border-radius: 16px;
             display: none;
+            animation: slideIn 0.3s ease;
         }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         .btn-generate {
             background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
             color: white;
             border: none;
-            padding: 12px;
-            border-radius: 10px;
+            padding: 15px;
+            border-radius: 12px;
             font-weight: 700;
             cursor: pointer;
             width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 10px;
+            transition: 0.3s;
         }
+
+        .btn-generate:hover { transform: scale(1.02); filter: brightness(1.1); }
+        .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; }
 
         #loader {
             position: absolute;
             inset: 0;
-            background: rgba(5,5,5,0.7);
+            background: rgba(5,5,5,0.8);
             display: none;
             flex-direction: column;
             justify-content: center;
@@ -107,10 +115,9 @@
         }
 
         .spinner {
-            width: 30px;
-            height: 30px;
-            border: 3px solid var(--glass-border);
-            border-top: 3px solid var(--accent-blue);
+            width: 40px; height: 40px;
+            border: 4px solid var(--glass-border);
+            border-top: 4px solid var(--accent-blue);
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -122,21 +129,24 @@
             right: 20px;
             bottom: 20px;
             display: flex;
+            flex-direction: column;
             gap: 10px;
         }
 
         .control-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            background: rgba(255,255,255,0.05);
+            width: 45px; height: 45px;
+            border-radius: 12px;
+            background: var(--glass);
             border: 1px solid var(--glass-border);
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            transition: 0.2s;
         }
+
+        .control-btn:hover { background: rgba(255,255,255,0.1); }
     </style>
 </head>
 <body>
@@ -145,7 +155,7 @@
 
     <div id="loader">
         <div class="spinner"></div>
-        <p style="margin-top: 15px; font-size: 0.9rem;">Building Knowledge Map...</p>
+        <p style="margin-top: 20px; font-weight: 600; letter-spacing: 1px;">AI MAPPING CONNECTIONS...</p>
     </div>
 
     <nav>
@@ -154,40 +164,40 @@
             <span class="logo">LUMINA</span>
         </div>
         <div style="text-align: right;">
-            <div id="chapter-name" style="font-weight: 600; font-size: 0.9rem;">Chapter View</div>
-            <div id="subject-name" style="color: var(--text-dim); font-size: 0.7rem; text-transform: uppercase;">Subject</div>
+            <div id="chapter-name" style="font-weight: 700; font-size: 1rem;">Chapter View</div>
+            <div id="subject-name" style="color: var(--accent-blue); font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">Subject</div>
         </div>
     </nav>
 
     <main>
         <div class="sidebar">
-            <h3 style="font-size: 1rem;">Concept Linker</h3>
-            <p style="font-size: 0.8rem; color: var(--text-dim);">Visualizing how your current chapter connects to the broader world.</p>
+            <h3 style="font-size: 1.2rem; font-weight: 800;">The Big Picture</h3>
+            <p style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.5;">See how your current study topics link to other subjects and real-world concepts.</p>
             
             <button class="btn-generate" id="gen-btn" onclick="generateGraph()">
-                <i data-lucide="zap" size="16"></i>
-                Generate Map
+                <i data-lucide="sparkles" size="18"></i>
+                Create Connection Map
             </button>
 
             <div id="concept-card" class="concept-card">
-                <h4 id="node-label" style="color: var(--accent-blue); margin-bottom: 5px;">Concept</h4>
-                <div id="node-tag" style="font-size: 0.65rem; background: var(--accent-purple); padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 8px;">SUBJECT</div>
-                <p id="node-desc" style="font-size: 0.8rem; line-height: 1.4; color: var(--text-dim);"></p>
+                <h4 id="node-label" style="color: var(--accent-blue); font-size: 1.1rem; margin-bottom: 5px;">Concept</h4>
+                <div id="node-tag" style="font-size: 0.7rem; font-weight: 700; background: var(--accent-purple); color: white; padding: 3px 8px; border-radius: 6px; display: inline-block; margin-bottom: 12px;">SUBJECT</div>
+                <p id="node-desc" style="font-size: 0.9rem; line-height: 1.6; color: var(--text-dim);"></p>
             </div>
         </div>
 
         <div id="cy"></div>
 
         <div class="controls">
-            <button class="control-btn" onclick="cy.fit()"><i data-lucide="maximize" size="18"></i></button>
-            <button class="control-btn" onclick="cy.zoom(cy.zoom() * 1.2)"><i data-lucide="plus" size="18"></i></button>
-            <button class="control-btn" onclick="cy.zoom(cy.zoom() * 0.8)"><i data-lucide="minus" size="18"></i></button>
+            <button class="control-btn" onclick="cy.fit()"><i data-lucide="maximize" size="20"></i></button>
+            <button class="control-btn" onclick="cy.zoom(cy.zoom() * 1.2)"><i data-lucide="plus" size="20"></i></button>
+            <button class="control-btn" onclick="cy.zoom(cy.zoom() * 0.8)"><i data-lucide="minus" size="20"></i></button>
         </div>
     </main>
 
     <script>
         let cy;
-        const apiKey = ""; 
+        const apiKey = ""; // Provided at runtime
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
@@ -213,20 +223,34 @@
                             'label': 'data(label)',
                             'background-color': 'data(color)',
                             'color': '#fff',
-                            'font-size': '10px',
+                            'font-family': 'Inter',
+                            'font-size': '12px',
+                            'font-weight': '600',
                             'text-valign': 'center',
-                            'width': 40,
-                            'height': 40,
-                            'text-outline-width': 1,
-                            'text-outline-color': '#000'
+                            'width': 'mapData(weight, 1, 10, 40, 70)',
+                            'height': 'mapData(weight, 1, 10, 40, 70)',
+                            'text-outline-width': 2,
+                            'text-outline-color': '#000',
+                            'overlay-padding': '8px'
                         }
                     },
                     {
                         selector: 'edge',
                         style: {
-                            'width': 1,
-                            'line-color': 'rgba(255,255,255,0.2)',
-                            'curve-style': 'haystack'
+                            'width': 2,
+                            'line-color': 'rgba(255,255,255,0.15)',
+                            'curve-style': 'bezier',
+                            'target-arrow-shape': 'triangle',
+                            'target-arrow-color': 'rgba(255,255,255,0.15)'
+                        }
+                    },
+                    {
+                        selector: 'node:selected',
+                        style: {
+                            'border-width': 4,
+                            'border-color': '#fff',
+                            'background-color': '#fff',
+                            'color': '#000'
                         }
                     }
                 ]
@@ -234,33 +258,43 @@
 
             cy.on('tap', 'node', (e) => {
                 const data = e.target.data();
-                document.getElementById('concept-card').style.display = 'block';
+                const card = document.getElementById('concept-card');
+                card.style.display = 'block';
                 document.getElementById('node-label').innerText = data.label;
-                document.getElementById('node-tag').innerText = data.subject;
+                document.getElementById('node-tag').innerText = data.subject || "General";
                 document.getElementById('node-desc').innerText = data.description;
             });
         }
 
         async function generateGraph() {
             const plan = JSON.parse(localStorage.getItem('lumina_active_plan'));
+            const session = JSON.parse(localStorage.getItem('lumina_session'));
+            const userKey = session?.profile?.apiKey || "";
+
             if (!plan) return;
 
             document.getElementById('loader').style.display = 'flex';
+            document.getElementById('gen-btn').disabled = true;
             
-            const prompt = `Topic: ${plan.currentChapter} (${plan.subject}). 
-            Create a simple knowledge graph. Return ONLY JSON:
+            const prompt = `Topic: ${plan.currentChapter} in ${plan.subject}. 
+            Identify 7 key concepts. For each, find ONE connection to a DIFFERENT field (e.g. Science to History).
+            Return ONLY a JSON object:
             {
               "nodes": [
-                {"id": "n1", "label": "Main Topic", "subject": "Core", "description": "...", "color": "#00d4ff"},
-                {"id": "n2", "label": "Connected Concept", "subject": "History", "description": "How it relates...", "color": "#7000ff"}
+                {"id": "n1", "label": "Topic Name", "subject": "Field", "description": "1 sentence explain", "color": "#00d4ff", "weight": 8},
+                ...
               ],
-              "edges": [{"source": "n1", "target": "n2"}]
+              "edges": [
+                {"source": "n1", "target": "n2"}
+              ]
             }
-            Include 6-8 interdisciplinary nodes. Keep descriptions short.`;
+            Use hex #00d4ff for core subject and #7000ff for interdisciplinary links.`;
 
             try {
-                const response = await callGemini(prompt);
-                const data = JSON.parse(response);
+                const response = await callGemini(prompt, userKey);
+                // Clean the response in case AI adds markdown code blocks
+                const cleanedJson = response.replace(/```json|```/g, "").trim();
+                const data = JSON.parse(cleanedJson);
                 
                 cy.elements().remove();
                 cy.add({
@@ -268,24 +302,49 @@
                     edges: data.edges.map(e => ({ data: e }))
                 });
 
-                cy.layout({ name: 'circle', padding: 100 }).run();
-                document.getElementById('gen-btn').innerHTML = '<i data-lucide="refresh-cw" size="16"></i> Re-map';
+                // Use the 'cose' layout for a more natural, spread-out organic look
+                cy.layout({ 
+                    name: 'cose', 
+                    animate: true,
+                    padding: 60,
+                    nodeOverlap: 20,
+                    componentSpacing: 100
+                }).run();
+
+                document.getElementById('gen-btn').innerHTML = '<i data-lucide="refresh-cw" size="18"></i> Regenerate';
                 lucide.createIcons();
             } catch (e) {
-                console.error(e);
+                console.error("Graph Error:", e);
+                alert("The AI had trouble building this specific map. Please try again.");
             } finally {
                 document.getElementById('loader').style.display = 'none';
+                document.getElementById('gen-btn').disabled = false;
             }
         }
 
-        async function callGemini(prompt) {
+        async function callGemini(prompt, userKey) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-            const res = await fetch(url, {
-                method: 'POST',
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } })
-            });
-            const data = await res.json();
-            return data.candidates[0].content.parts[0].text;
+            
+            let retries = 0;
+            const maxRetries = 5;
+
+            while (retries <= maxRetries) {
+                try {
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                            generationConfig: { responseMimeType: "application/json" }
+                        })
+                    });
+                    const data = await res.json();
+                    return data.candidates[0].content.parts[0].text;
+                } catch (e) {
+                    if (retries === maxRetries) throw e;
+                    await new Promise(r => setTimeout(r, Math.pow(2, retries) * 1000));
+                    retries++;
+                }
+            }
         }
     </script>
 </body>
