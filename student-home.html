@@ -263,7 +263,6 @@
                 </div>
             </div>
 
-            <!-- MODIFIED LINK HERE -->
             <div class="glass-panel study-plus" onclick="location.href='study-plus.html'">
                 <div class="panel-title" style="justify-content: center;">
                     <i data-lucide="sparkles" style="color: var(--accent-blue);"></i>
@@ -296,6 +295,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             checkSession();
+            syncDataWithDashboard(); // New: Merges dashboard updates back to master list
             loadStudyPlans();
         });
 
@@ -316,16 +316,41 @@
             }
         }
 
+        /**
+         * Crucial Sync Function:
+         * Because the dashboard (dashboard.html) updates 'lumina_active_plan', 
+         * we must save those changes back into the main 'lumina_plans_list' 
+         * so this home screen reflects the updated progress.
+         */
+        function syncDataWithDashboard() {
+            const activePlan = JSON.parse(localStorage.getItem('lumina_active_plan'));
+            let allPlans = JSON.parse(localStorage.getItem('lumina_plans_list')) || [];
+
+            if (activePlan) {
+                // Find index of this plan in the master list by subject name
+                const index = allPlans.findIndex(p => p.subject === activePlan.subject);
+                
+                if (index !== -1) {
+                    // Update existing plan with new chapter statuses
+                    allPlans[index] = activePlan;
+                } else {
+                    // It's a brand new plan, add it to the list
+                    allPlans.push(activePlan);
+                }
+                
+                // Save updated master list back to storage
+                localStorage.setItem('lumina_plans_list', JSON.stringify(allPlans));
+            }
+        }
+
         function loadStudyPlans() {
             const grid = document.getElementById('plans-grid');
-            const currentPlan = JSON.parse(localStorage.getItem('lumina_active_plan'));
             const allPlans = JSON.parse(localStorage.getItem('lumina_plans_list')) || [];
             
-            let plans = [...allPlans];
-            // Ensure distinct plans by subject name
+            // Clean up duplicates if any
             const uniquePlans = [];
             const map = new Map();
-            for (const item of plans) {
+            for (const item of allPlans) {
                 if(!map.has(item.subject)){
                     map.set(item.subject, true);
                     uniquePlans.push(item);
@@ -334,17 +359,25 @@
             
             if (uniquePlans.length === 0) {
                 grid.innerHTML = `<div class="empty-state">No active roadmaps found. Start by creating one!</div>`;
+                document.getElementById('total-mastery').innerText = '0%';
+                document.getElementById('active-count').innerText = '0';
                 return;
             }
 
-            document.getElementById('active-count').innerText = uniquePlans.length;
+            let totalMilestones = 0;
+            let completedMilestones = 0;
+
             grid.innerHTML = '';
 
             uniquePlans.forEach((plan) => {
                 const chapters = plan.chapters || [];
                 const done = chapters.filter(c => c.completed).length;
-                const total = chapters.length || 1;
-                const progress = Math.round((done / total) * 100);
+                const total = chapters.length || 0;
+                
+                totalMilestones += total;
+                completedMilestones += done;
+
+                const progress = total > 0 ? Math.round((done / total) * 100) : 0;
 
                 const card = document.createElement('div');
                 card.className = 'plan-card';
@@ -365,10 +398,17 @@
                 `;
                 grid.appendChild(card);
             });
+
+            // Update Knowledge Gained (Mastery)
+            const mastery = totalMilestones > 0 ? Math.round((completedMilestones / totalMilestones) * 100) : 0;
+            document.getElementById('total-mastery').innerText = mastery + '%';
+            document.getElementById('active-count').innerText = uniquePlans.length;
+            
             lucide.createIcons();
         }
 
         function openPlan(plan) {
+            // Set this as the active plan before navigating
             localStorage.setItem('lumina_active_plan', JSON.stringify(plan));
             window.location.href = 'dashboard.html';
         }
