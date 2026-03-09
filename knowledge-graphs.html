@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumina | Knowledge Graphs</title>
+    <title>Lumina | Concept Mapper</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
     <style>
         :root {
             --bg-dark: #050505;
@@ -16,6 +15,8 @@
             --glass-border: rgba(255, 255, 255, 0.1);
             --text-main: #ffffff;
             --text-dim: #a0a0a0;
+            --card-bg: rgba(15, 15, 15, 0.6);
+            --error: #ff4b4b;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -24,289 +25,357 @@
             background-color: var(--bg-dark);
             color: var(--text-main);
             font-family: 'Inter', sans-serif;
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
-        }
-
-        #visual-bg {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -2;
-            object-fit: cover;
-            opacity: 0.3;
-            filter: blur(5px);
-            transition: opacity 1s ease;
+            overflow-x: hidden;
         }
 
         .ambient-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             z-index: -1;
-            background: radial-gradient(circle at center, transparent 0%, var(--bg-dark) 90%);
+            background: 
+                radial-gradient(circle at 0% 0%, rgba(112, 0, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(0, 212, 255, 0.05) 0%, transparent 50%);
         }
 
         nav {
-            padding: 15px 30px;
+            padding: 20px 40px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid var(--glass-border);
             backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
             z-index: 100;
         }
 
         .logo-area { display: flex; align-items: center; gap: 15px; cursor: pointer; }
         .logo { font-weight: 800; letter-spacing: 2px; font-size: 1.2rem; background: linear-gradient(to right, #fff, var(--accent-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        main { flex: 1; display: flex; position: relative; }
+        main { 
+            max-width: 900px; 
+            margin: 40px auto; 
+            padding: 0 20px;
+            width: 100%;
+        }
 
-        #cy { flex: 1; width: 100%; height: 100%; background: transparent; }
+        .header-section {
+            text-align: center;
+            margin-bottom: 50px;
+        }
 
-        .sidebar {
-            position: absolute;
-            left: 20px; top: 20px;
-            width: 320px;
-            background: rgba(10, 10, 10, 0.85);
+        .header-section h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            letter-spacing: -1px;
+        }
+
+        .header-section p {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .control-panel {
+            background: var(--glass);
             border: 1px solid var(--glass-border);
+            padding: 30px;
             border-radius: 24px;
-            backdrop-filter: blur(30px);
-            padding: 25px;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            margin-bottom: 40px;
+            text-align: center;
         }
-
-        .concept-card {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--glass-border);
-            padding: 15px;
-            border-radius: 16px;
-            display: none;
-            animation: slideUp 0.3s ease;
-        }
-
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         .btn-generate {
             background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
-            color: white; border: none; padding: 14px; border-radius: 12px;
-            font-weight: 700; cursor: pointer; width: 100%;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
+            color: white; border: none; padding: 16px 32px; border-radius: 14px;
+            font-weight: 700; cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center; gap: 10px;
             transition: 0.3s;
+            font-size: 1rem;
         }
 
-        .btn-generate:disabled { opacity: 0.6; cursor: wait; }
+        .btn-generate:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(112, 0, 255, 0.2); }
+        .btn-generate:disabled { opacity: 0.5; cursor: wait; }
 
-        #status-box {
-            position: fixed;
-            bottom: 20px; left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.8);
-            padding: 10px 25px;
-            border-radius: 50px;
+        .connection-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .connection-card {
+            background: var(--card-bg);
             border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 25px;
+            transition: 0.3s;
+            animation: slideUp 0.5s ease forwards;
+            opacity: 0;
+        }
+
+        @keyframes slideUp { 
+            from { opacity: 0; transform: translateY(20px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .concept-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .subject-tag {
+            font-size: 0.7rem;
+            font-weight: 700;
+            background: rgba(255,255,255,0.1);
+            padding: 4px 10px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .big-picture-content {
+            line-height: 1.6;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .link-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent-purple);
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        #loading {
             display: none;
-            align-items: center; gap: 15px;
-            z-index: 1000;
+            text-align: center;
+            padding: 40px;
         }
 
-        .loader-dot {
-            width: 8px; height: 8px; background: var(--accent-blue);
-            border-radius: 50%; animation: pulse 1s infinite alternate;
+        .loader-spin {
+            width: 40px; height: 40px;
+            border: 3px solid var(--glass-border);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
         }
 
-        @keyframes pulse { from { opacity: 0.3; transform: scale(0.8); } to { opacity: 1; transform: scale(1.2); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: var(--text-dim);
+        }
+
+        .error-message {
+            color: var(--error);
+            background: rgba(255, 75, 75, 0.1);
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+            border: 1px solid var(--error);
+        }
     </style>
 </head>
 <body>
 
-    <img id="visual-bg" src="" alt="">
     <div class="ambient-overlay"></div>
 
-    <div id="status-box">
-        <div class="loader-dot"></div>
-        <span id="status-text" style="font-size: 0.85rem; font-weight: 600; letter-spacing: 0.5px;">AI WORKING...</span>
-    </div>
-
     <nav>
-        <div class="logo-area" onclick="location.href='dashboard.html'">
+        <div class="logo-area" onclick="location.href='student-home.html'">
             <i data-lucide="arrow-left" size="20"></i>
             <span class="logo">LUMINA</span>
         </div>
         <div style="text-align: right;">
-            <div id="chapter-name" style="font-weight: 700; font-size: 1rem;">Map View</div>
-            <div id="subject-name" style="color: var(--accent-blue); font-size: 0.75rem; text-transform: uppercase;">Subject</div>
+            <div id="current-topic" style="font-weight: 700; font-size: 1rem;">Big Picture View</div>
+            <div id="current-subject" style="color: var(--accent-blue); font-size: 0.75rem; text-transform: uppercase;">Subject Insights</div>
         </div>
     </nav>
 
     <main>
-        <div class="sidebar">
-            <h3 style="font-size: 1.1rem; font-weight: 800;">Knowledge Discovery</h3>
-            <p style="font-size: 0.8rem; color: var(--text-dim);">Lumina will first generate a visual context, then map out text-based conceptual connections.</p>
-            
-            <button class="btn-generate" id="gen-btn" onclick="startGeneration()">
-                <i data-lucide="sparkles" size="18"></i>
-                Visualize & Map
-            </button>
-
-            <div id="concept-card" class="concept-card">
-                <h4 id="node-label" style="color: var(--accent-blue); font-size: 1rem; margin-bottom: 4px;">Concept</h4>
-                <div id="node-tag" style="font-size: 0.65rem; font-weight: 700; background: var(--accent-purple); color: white; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 10px;">FIELD</div>
-                <p id="node-desc" style="font-size: 0.85rem; line-height: 1.5; color: var(--text-dim);"></p>
-            </div>
+        <div class="header-section">
+            <h1>Concept Mapper</h1>
+            <p>Moving beyond definitions. We use AI to textualize connections between your current study topic and the wider world of knowledge.</p>
         </div>
 
-        <div id="cy"></div>
+        <div class="control-panel">
+            <button class="btn-generate" id="gen-btn" onclick="startMapping()">
+                <i data-lucide="network" size="20"></i>
+                Map Connections
+            </button>
+        </div>
+
+        <div id="loading">
+            <div class="loader-spin"></div>
+            <p style="color: var(--accent-blue); font-weight: 600;">Lumina AI is processing the big picture...</p>
+        </div>
+
+        <div id="connection-container" class="connection-grid">
+            <div class="empty-state">
+                <i data-lucide="layers" size="40" style="margin-bottom: 15px; opacity: 0.5;"></i>
+                <p>Click 'Map Connections' to analyze interdisciplinary links.</p>
+            </div>
+        </div>
     </main>
 
     <script>
-        let cy;
-        const apiKey = ""; // Runtime key
+        const apiKey = ""; // Provided at runtime
+        const modelName = "gemini-2.5-flash-preview-09-2025";
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            loadContext();
-            initCy();
-        });
-
-        function loadContext() {
             const plan = JSON.parse(localStorage.getItem('lumina_active_plan'));
             if (plan) {
-                document.getElementById('chapter-name').innerText = plan.currentChapter || "Conceptual Map";
-                document.getElementById('subject-name').innerText = plan.subject || "Study";
+                document.getElementById('current-topic').innerText = plan.currentChapter || "Active Topic";
+                document.getElementById('current-subject').innerText = plan.subject || "Study Area";
+            }
+        });
+
+        async function fetchWithRetry(url, options, retries = 5, backoff = 1000) {
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return await response.json();
+            } catch (err) {
+                if (retries > 0) {
+                    await new Promise(resolve => setTimeout(resolve, backoff));
+                    return fetchWithRetry(url, options, retries - 1, backoff * 2);
+                }
+                throw err;
             }
         }
 
-        function initCy() {
-            cy = cytoscape({
-                container: document.getElementById('cy'),
-                style: [
-                    {
-                        selector: 'node',
-                        style: {
-                            'label': 'data(label)',
-                            'background-color': 'data(color)',
-                            'color': '#fff',
-                            'font-family': 'Inter',
-                            'font-size': '11px',
-                            'font-weight': '600',
-                            'text-valign': 'center',
-                            'width': 45, 'height': 45,
-                            'text-outline-width': 2,
-                            'text-outline-color': '#000'
-                        }
-                    },
-                    {
-                        selector: 'edge',
-                        style: {
-                            'width': 2,
-                            'line-color': 'rgba(255,255,255,0.2)',
-                            'curve-style': 'bezier',
-                            'target-arrow-shape': 'triangle',
-                            'target-arrow-color': 'rgba(255,255,255,0.2)'
-                        }
-                    }
-                ]
-            });
-
-            cy.on('tap', 'node', (e) => {
-                const data = e.target.data();
-                const card = document.getElementById('concept-card');
-                card.style.display = 'block';
-                document.getElementById('node-label').innerText = data.label;
-                document.getElementById('node-tag').innerText = data.subject || "Concept";
-                document.getElementById('node-desc').innerText = data.description;
-            });
-        }
-
-        async function startGeneration() {
+        async function startMapping() {
             const plan = JSON.parse(localStorage.getItem('lumina_active_plan'));
-            if (!plan) return;
+            const session = JSON.parse(localStorage.getItem('lumina_session'));
+            const userKey = session?.profile?.apiKey || apiKey;
 
+            if (!plan) {
+                showError("No active study plan found. Please create one first.");
+                return;
+            }
+
+            if (!userKey) {
+                showError("Gemini API Key missing. Please update your profile in settings.");
+                return;
+            }
+
+            const container = document.getElementById('connection-container');
+            const loading = document.getElementById('loading');
             const btn = document.getElementById('gen-btn');
-            const statusBox = document.getElementById('status-box');
-            const statusText = document.getElementById('status-text');
 
             btn.disabled = true;
-            statusBox.style.display = 'flex';
+            container.innerHTML = '';
+            loading.style.display = 'block';
 
             try {
-                // 1. Generate Image First
-                statusText.innerText = "GENERATING VISUAL CONTEXT...";
-                const imgUrl = await generateContextImage(plan.currentChapter, plan.subject);
-                if (imgUrl) {
-                    const bg = document.getElementById('visual-bg');
-                    bg.src = imgUrl;
-                    bg.style.opacity = "0.3";
-                }
+                const topic = plan.currentChapter;
+                const subject = plan.subject;
 
-                // 2. Generate Graph Data
-                statusText.innerText = "MAPPING TEXT CONNECTIONS...";
-                const graphData = await generateGraphData(plan.currentChapter, plan.subject);
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${userKey}`;
                 
-                cy.elements().remove();
-                cy.add({
-                    nodes: graphData.nodes.map(n => ({ data: n })),
-                    edges: graphData.edges.map(e => ({ data: e }))
+                const systemPrompt = `You are an interdisciplinary academic expert. 
+                Goal: Textualize connections between a specific study topic and other subjects to provide a 'Big Picture' view.
+                Provide 4 distinct, high-quality connections.
+                Avoid generic fluff. Be specific about HOW they connect.`;
+
+                const userPrompt = `The student is currently studying "${topic}" in the subject "${subject}". 
+                Explain 4 connections this topic has with OTHER fields (e.g., how it relates to Economics, Biology, History, Art, or Ethics).
+                Return ONLY a JSON array of objects with these keys: "title", "subject", "description", "link".`;
+
+                const payload = {
+                    contents: [{ parts: [{ text: userPrompt }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    title: { type: "STRING" },
+                                    subject: { type: "STRING" },
+                                    description: { type: "STRING" },
+                                    link: { type: "STRING" }
+                                },
+                                required: ["title", "subject", "description", "link"]
+                            }
+                        }
+                    }
+                };
+
+                const result = await fetchWithRetry(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
                 });
 
-                cy.layout({ name: 'cose', animate: true, padding: 50 }).run();
+                const data = JSON.parse(result.candidates?.[0]?.content?.parts?.[0]?.text || "[]");
+                
+                if (data.length === 0) {
+                    showError("No connections found for this topic. Try another chapter.");
+                } else {
+                    renderConnections(data);
+                }
 
             } catch (err) {
                 console.error(err);
-                statusText.innerText = "RETRIEVING SIMPLIFIED MAP...";
-                // Minimal Fallback
-                const fallback = {
-                    nodes: [{ id: "c1", label: plan.currentChapter, color: "#00d4ff", description: "Main topic for analysis." }],
-                    edges: []
-                };
-                cy.add({ nodes: fallback.nodes.map(n => ({ data: n })) });
+                showError("AI Analysis failed after multiple attempts. Please check your internet connection or API key.");
             } finally {
-                statusBox.style.display = 'none';
+                loading.style.display = 'none';
                 btn.disabled = false;
             }
         }
 
-        async function generateContextImage(topic, subject) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
-            const prompt = `A cinematic, abstract, high-tech representation of ${topic} in the field of ${subject}. Dark background, neon light traces, 8k resolution, educational concept art.`;
-            
-            try {
-                const res = await fetch(url, {
-                    method: 'POST',
-                    body: JSON.stringify({ instances: { prompt: prompt }, parameters: { sampleCount: 1 } })
-                });
-                const data = await res.json();
-                return `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
-            } catch (e) { return null; }
+        function renderConnections(connections) {
+            const container = document.getElementById('connection-container');
+            container.innerHTML = '';
+
+            connections.forEach((conn, index) => {
+                const card = document.createElement('div');
+                card.className = 'connection-card';
+                card.style.animationDelay = `${index * 0.1}s`;
+                
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="concept-title">${conn.title}</div>
+                        <div class="subject-tag">${conn.subject}</div>
+                    </div>
+                    <div class="big-picture-content">
+                        ${conn.description}
+                    </div>
+                    <div class="link-indicator">
+                        <i data-lucide="link" size="14"></i>
+                        <span>${conn.link}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            lucide.createIcons();
         }
 
-        async function generateGraphData(topic, subject) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-            const prompt = `Create a knowledge graph for the topic: ${topic} (${subject}). 
-            Identify 6 related concepts. 
-            Format as EXACT JSON ONLY:
-            {
-                "nodes": [{"id": "a", "label": "Name", "subject": "Field", "description": "1 sentence", "color": "#7000ff"}],
-                "edges": [{"source": "a", "target": "b"}]
-            }`;
-
-            const res = await fetch(url, {
-                method: 'POST',
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: { responseMimeType: "application/json" }
-                })
-            });
-            const result = await res.json();
-            const text = result.candidates[0].content.parts[0].text;
-            
-            // Clean AI text to find JSON
-            const jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
-            return JSON.parse(jsonStr);
+        function showError(msg) {
+            const container = document.getElementById('connection-container');
+            container.innerHTML = `<div class="error-message">${msg}</div>`;
         }
     </script>
 </body>
