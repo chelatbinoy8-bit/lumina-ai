@@ -236,23 +236,26 @@
         }
 
         /**
-         * Saves the specific chapter index before navigating.
-         * Using the INDEX is safer than just passing the title because it avoids 
-         * duplication issues if multiple chapters have similar titles.
+         * UPDATED NAVIGATION:
+         * This saves the index and chapter data to local storage.
+         * All future pages (flashcards, exams, etc.) can now simply read 
+         * 'lumina_active_chapter_index' to know which chapter they are working on.
          */
         function navigateWithContext(url, index) {
             const currentPlan = JSON.parse(localStorage.getItem('lumina_active_plan'));
             const chapter = currentPlan.chapters[index];
             
-            // Set the focus context
+            // Set the focus context inside the plan object
             currentPlan.currentChapter = chapter.title;
             currentPlan.currentDetails = chapter.details;
             
-            // Store index and updated plan
+            // Save the index explicitly for pages like summaries.html
             localStorage.setItem('lumina_active_chapter_index', index);
+            
+            // Update the plan object in storage (keeps track of subject, date, and focus)
             localStorage.setItem('lumina_active_plan', JSON.stringify(currentPlan));
             
-            // Redirect to the tool
+            // Redirect to the tool (flashcards.html, exams.html, etc.)
             window.location.href = url;
         }
 
