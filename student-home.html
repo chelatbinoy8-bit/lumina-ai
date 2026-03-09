@@ -263,7 +263,8 @@
                 </div>
             </div>
 
-            <div class="glass-panel study-plus" onclick="location.href='index.html'">
+            <!-- MODIFIED LINK HERE -->
+            <div class="glass-panel study-plus" onclick="location.href='study-plus.html'">
                 <div class="panel-title" style="justify-content: center;">
                     <i data-lucide="sparkles" style="color: var(--accent-blue);"></i>
                     Create New Roadmap
@@ -311,32 +312,35 @@
                     console.error("Session error", e);
                 }
             } else {
-                // If no session exists, student shouldn't be here
                 window.location.href = 'index.html';
             }
         }
 
         function loadStudyPlans() {
             const grid = document.getElementById('plans-grid');
-            
-            // Check for both individual active plan and a potential list
             const currentPlan = JSON.parse(localStorage.getItem('lumina_active_plan'));
             const allPlans = JSON.parse(localStorage.getItem('lumina_plans_list')) || [];
             
-            // Merge for display purposes if currentPlan isn't in list
             let plans = [...allPlans];
-            if (currentPlan && !plans.find(p => p.subject === currentPlan.subject)) {
-                plans.push(currentPlan);
+            // Ensure distinct plans by subject name
+            const uniquePlans = [];
+            const map = new Map();
+            for (const item of plans) {
+                if(!map.has(item.subject)){
+                    map.set(item.subject, true);
+                    uniquePlans.push(item);
+                }
             }
             
-            if (plans.length === 0) {
+            if (uniquePlans.length === 0) {
                 grid.innerHTML = `<div class="empty-state">No active roadmaps found. Start by creating one!</div>`;
                 return;
             }
 
-            document.getElementById('active-count').innerText = plans.length;
+            document.getElementById('active-count').innerText = uniquePlans.length;
+            grid.innerHTML = '';
 
-            plans.forEach((plan) => {
+            uniquePlans.forEach((plan) => {
                 const chapters = plan.chapters || [];
                 const done = chapters.filter(c => c.completed).length;
                 const total = chapters.length || 1;
@@ -365,15 +369,12 @@
         }
 
         function openPlan(plan) {
-            // Save this specific plan as the active one so dashboard.html displays it
             localStorage.setItem('lumina_active_plan', JSON.stringify(plan));
             window.location.href = 'dashboard.html';
         }
 
         function handleLogout() {
-            // Clear relevant data
             localStorage.removeItem('lumina_session');
-            // Redirect to home
             window.location.href = 'index.html';
         }
     </script>
