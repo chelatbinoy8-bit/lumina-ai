@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina | Learning Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --accent-purple: #7000ff;
+            --accent-blue: #00d4ff;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --text-main: #ffffff;
+            --text-dim: #a0a0a0;
+            --card-hover: rgba(255, 255, 255, 0.06);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .dashboard {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 32px;
+            padding: 40px;
+            backdrop-filter: blur(40px);
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }
+        
+        .nav-controls { display: flex; gap: 12px; }
+
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 40px; }
+        .stat-card { background: rgba(255,255,255,0.02); padding: 20px; border-radius: 20px; border: 1px solid var(--glass-border); }
+        .stat-val { font-size: 1.5rem; font-weight: 800; color: var(--accent-blue); }
+        .stat-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; margin-top: 5px; }
+
+        .section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; color: var(--accent-blue); display: flex; align-items: center; gap: 10px; }
+
+        .chapter-container { display: flex; flex-direction: column; gap: 16px; }
+
+        .chapter-item {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .chapter-main {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .check {
+            width: 28px; height: 28px; border: 2px solid var(--accent-purple); border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            transition: 0.2s;
+        }
+        .check.done { background: var(--accent-purple); }
+        .check.done::after { content: '✓'; color: white; font-weight: bold; }
+
+        .study-modes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            padding-top: 20px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .mode-btn {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            padding: 12px;
+            border-radius: 16px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 8px;
+            transition: 0.3s;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .mode-btn:hover {
+            background: var(--card-hover);
+            border-color: var(--accent-blue);
+            transform: translateY(-3px);
+        }
+
+        .mode-btn i { color: var(--accent-blue); }
+        .mode-btn span { font-size: 0.75rem; font-weight: 600; line-height: 1.2; }
+
+        .btn-secondary { 
+            background: none; 
+            border: 1px solid var(--glass-border); 
+            color: var(--text-dim); 
+            padding: 10px 20px; 
+            border-radius: 14px; 
+            cursor: pointer; 
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+        .btn-secondary:hover { border-color: var(--text-main); color: var(--text-main); }
+
+        .btn-exit {
+            background: rgba(255, 59, 48, 0.1);
+            border: 1px solid rgba(255, 59, 48, 0.2);
+            color: #ff3b30;
+        }
+        .btn-exit:hover { background: #ff3b30; color: white; }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <div>
+                <h1 id="subTitle" style="font-size: 2rem; font-weight: 800; letter-spacing: -1px;">Learning Hub</h1>
+                <p id="dateTarget" style="color: var(--accent-blue); font-size: 0.85rem; font-weight: 600; margin-top: 5px;"></p>
+            </div>
+            <div class="nav-controls">
+                <button class="btn-secondary" onclick="reset()">
+                    <i data-lucide="refresh-cw" size="16"></i> New Plan
+                </button>
+                <button class="btn-secondary btn-exit" onclick="exit()">
+                    <i data-lucide="log-out" size="16"></i> Exit
+                </button>
+            </div>
+        </div>
+
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-val" id="sTotal">0</div>
+                <div class="stat-label">Total Lessons</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val" id="sRem">0</div>
+                <div class="stat-label">Pending</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val" id="sProg">0%</div>
+                <div class="stat-label">Mastery Score</div>
+            </div>
+        </div>
+
+        <div class="section-title">
+            <i data-lucide="book-open" size="20"></i>
+            Your Curriculum
+        </div>
+
+        <div id="list" class="chapter-container"></div>
+    </div>
+
+    <script>
+        let plan = JSON.parse(localStorage.getItem('lumina_active_plan'));
+        if(!plan) window.location.href = 'index.html';
+
+        function render() {
+            document.getElementById('subTitle').innerText = plan.subject;
+            document.getElementById('dateTarget').innerText = "TARGET COMPLETION: " + plan.targetDate;
+            
+            const list = document.getElementById('list');
+            list.innerHTML = '';
+            
+            let done = 0;
+            plan.chapters.forEach((ch, i) => {
+                if(ch.completed) done++;
+                const item = document.createElement('div');
+                item.className = 'chapter-item';
+                if(ch.completed) item.style.borderLeft = '4px solid var(--accent-purple)';
+                
+                item.innerHTML = `
+                    <div class="chapter-main">
+                        <div class="check ${ch.completed ? 'done' : ''}" onclick="toggle(${i})"></div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 800; font-size: 1.1rem; margin-bottom: 4px;">${ch.title}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.4;">${ch.details}</div>
+                        </div>
+                    </div>
+                    <div class="study-modes">
+                        <a href="aichat.html" class="mode-btn">
+                            <i data-lucide="message-circle" size="20"></i>
+                            <span>Socratic Tutoring</span>
+                        </a>
+                        <a href="knowledge-graphs.html" class="mode-btn">
+                            <i data-lucide="git-branch" size="20"></i>
+                            <span>Knowledge Graph</span>
+                        </a>
+                        <a href="summaries.html" class="mode-btn">
+                            <i data-lucide="file-text" size="20"></i>
+                            <span>Cornell Notes</span>
+                        </a>
+                        <a href="flashcards.html" class="mode-btn">
+                            <i data-lucide="layers" size="20"></i>
+                            <span>SRS Deck</span>
+                        </a>
+                        <a href="exams.html" class="mode-btn">
+                            <i data-lucide="medal" size="20"></i>
+                            <span>Mock Exam</span>
+                        </a>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+
+            document.getElementById('sTotal').innerText = plan.chapters.length;
+            document.getElementById('sRem').innerText = plan.chapters.length - done;
+            document.getElementById('sProg').innerText = Math.round((done / plan.chapters.length) * 100) + "%";
+            
+            lucide.createIcons();
+        }
+
+        function toggle(i) {
+            plan.chapters[i].completed = !plan.chapters[i].completed;
+            localStorage.setItem('lumina_active_plan', JSON.stringify(plan));
+            render();
+        }
+
+        function reset() {
+            if(confirm("Are you sure you want to discard this roadmap and start a new one?")) {
+                localStorage.removeItem('lumina_active_plan');
+                window.location.href = 'index.html';
+            }
+        }
+
+        function exit() {
+            window.location.href = 'student-home.html';
+        }
+
+        render();
+    </script>
+</body>
+</html>
