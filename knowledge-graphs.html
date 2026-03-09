@@ -105,6 +105,7 @@
         .connection-grid {
             display: grid;
             gap: 20px;
+            padding-bottom: 50px;
         }
 
         .connection-card {
@@ -143,12 +144,14 @@
             border-radius: 6px;
             text-transform: uppercase;
             letter-spacing: 1px;
+            color: var(--accent-purple);
         }
 
         .big-picture-content {
             line-height: 1.6;
             color: #ddd;
             margin-bottom: 20px;
+            font-size: 0.95rem;
         }
 
         .link-indicator {
@@ -157,10 +160,11 @@
             gap: 10px;
             font-size: 0.85rem;
             font-weight: 600;
-            color: var(--accent-purple);
+            color: var(--text-dim);
             margin-top: 15px;
             padding-top: 15px;
             border-top: 1px solid rgba(255,255,255,0.05);
+            font-style: italic;
         }
 
         #loading {
@@ -201,7 +205,7 @@
     <div class="ambient-overlay"></div>
 
     <nav>
-        <div class="logo-area" onclick="location.href='student-home.html'">
+        <div class="logo-area" onclick="location.href='dashboard.html'">
             <i data-lucide="arrow-left" size="20"></i>
             <span class="logo">LUMINA</span>
         </div>
@@ -214,68 +218,46 @@
     <main>
         <div class="header-section">
             <h1>Concept Mapper</h1>
-            <p>Moving beyond definitions. We use AI to textualize connections between your current study topic and the wider world of knowledge.</p>
+            <p>Moving beyond definitions. We use AI to weave connections between your topic and the wider world of knowledge.</p>
         </div>
 
         <div class="control-panel">
             <button class="btn-generate" id="gen-btn" onclick="startMapping()">
                 <i data-lucide="network" size="20"></i>
-                Map Connections
+                Generate Knowledge Links
             </button>
         </div>
 
         <div id="loading">
             <div class="loader-spin"></div>
-            <p style="color: var(--accent-blue); font-weight: 600;">Lumina AI is processing the big picture...</p>
+            <p style="color: var(--accent-blue); font-weight: 600;">Lumina is exploring interdisciplinary paths...</p>
         </div>
 
         <div id="connection-container" class="connection-grid">
             <div class="empty-state">
                 <i data-lucide="layers" size="40" style="margin-bottom: 15px; opacity: 0.5;"></i>
-                <p>Click 'Map Connections' to analyze interdisciplinary links.</p>
+                <p>Click the button above to analyze how your topic connects to other fields.</p>
             </div>
         </div>
     </main>
 
     <script>
-        const apiKey = ""; // Provided at runtime
-        const modelName = "gemini-2.5-flash-preview-09-2025";
+        const groqKey = localStorage.getItem('lumina_groq_key');
+        let plan = JSON.parse(localStorage.getItem('lumina_active_plan'));
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            const plan = JSON.parse(localStorage.getItem('lumina_active_plan'));
             if (plan) {
-                document.getElementById('current-topic').innerText = plan.currentChapter || "Active Topic";
+                // Use selected chapter or first incomplete
+                const activeTitle = plan.currentChapter || plan.chapters.find(c => !c.completed)?.title || "General Topic";
+                document.getElementById('current-topic').innerText = activeTitle;
                 document.getElementById('current-subject').innerText = plan.subject || "Study Area";
             }
         });
 
-        async function fetchWithRetry(url, options, retries = 5, backoff = 1000) {
-            try {
-                const response = await fetch(url, options);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                return await response.json();
-            } catch (err) {
-                if (retries > 0) {
-                    await new Promise(resolve => setTimeout(resolve, backoff));
-                    return fetchWithRetry(url, options, retries - 1, backoff * 2);
-                }
-                throw err;
-            }
-        }
-
         async function startMapping() {
-            const plan = JSON.parse(localStorage.getItem('lumina_active_plan'));
-            const session = JSON.parse(localStorage.getItem('lumina_session'));
-            const userKey = session?.profile?.apiKey || apiKey;
-
-            if (!plan) {
-                showError("No active study plan found. Please create one first.");
-                return;
-            }
-
-            if (!userKey) {
-                showError("Gemini API Key missing. Please update your profile in settings.");
+            if (!groqKey) {
+                showError("Groq API Key missing. Please set it up in your dashboard first.");
                 return;
             }
 
@@ -283,63 +265,54 @@
             const loading = document.getElementById('loading');
             const btn = document.getElementById('gen-btn');
 
+            const topic = document.getElementById('current-topic').innerText;
+            const subject = document.getElementById('current-subject').innerText;
+
             btn.disabled = true;
             container.innerHTML = '';
             loading.style.display = 'block';
 
             try {
-                const topic = plan.currentChapter;
-                const subject = plan.subject;
-
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${userKey}`;
-                
-                const systemPrompt = `You are an interdisciplinary academic expert. 
-                Goal: Textualize connections between a specific study topic and other subjects to provide a 'Big Picture' view.
-                Provide 4 distinct, high-quality connections.
-                Avoid generic fluff. Be specific about HOW they connect.`;
-
-                const userPrompt = `The student is currently studying "${topic}" in the subject "${subject}". 
-                Explain 4 connections this topic has with OTHER fields (e.g., how it relates to Economics, Biology, History, Art, or Ethics).
-                Return ONLY a JSON array of objects with these keys: "title", "subject", "description", "link".`;
-
-                const payload = {
-                    contents: [{ parts: [{ text: userPrompt }] }],
-                    systemInstruction: { parts: [{ text: systemPrompt }] },
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                        responseSchema: {
-                            type: "ARRAY",
-                            items: {
-                                type: "OBJECT",
-                                properties: {
-                                    title: { type: "STRING" },
-                                    subject: { type: "STRING" },
-                                    description: { type: "STRING" },
-                                    link: { type: "STRING" }
-                                },
-                                required: ["title", "subject", "description", "link"]
-                            }
-                        }
-                    }
-                };
-
-                const result = await fetchWithRetry(url, {
+                const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    headers: {
+                        'Authorization': `Bearer ${groqKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: "llama-3.3-70b-versatile",
+                        messages: [
+                            {
+                                role: "system",
+                                content: "You are an interdisciplinary knowledge expert. Your goal is to help students see the 'Big Picture' by connecting their current study topic to other unrelated fields. Provide exactly 4 high-quality connections. Format the output as a valid JSON array of objects with keys: 'title', 'related_field', 'connection_narrative', 'why_it_matters'."
+                            },
+                            {
+                                role: "user",
+                                content: `The student is studying "${topic}" within the subject of "${subject}". Analyze how this specific topic relates to 4 other diverse fields (e.g. Art, Ethics, History, Biology, Economics, etc). Be specific and insightful.`
+                            }
+                        ],
+                        temperature: 0.7,
+                        response_format: { type: "json_object" }
+                    })
                 });
 
-                const data = JSON.parse(result.candidates?.[0]?.content?.parts?.[0]?.text || "[]");
+                const result = await response.json();
+                // Groq usually returns a JSON string inside the content
+                const rawContent = result.choices[0].message.content;
+                const parsed = JSON.parse(rawContent);
                 
-                if (data.length === 0) {
-                    showError("No connections found for this topic. Try another chapter.");
+                // Handle different JSON structures the AI might return
+                const connections = parsed.connections || parsed.links || Object.values(parsed)[0];
+                
+                if (Array.isArray(connections)) {
+                    renderConnections(connections);
                 } else {
-                    renderConnections(data);
+                    throw new Error("Invalid format received");
                 }
 
             } catch (err) {
                 console.error(err);
-                showError("AI Analysis failed after multiple attempts. Please check your internet connection or API key.");
+                showError("Failed to generate knowledge map. Please verify your Groq API key or try again.");
             } finally {
                 loading.style.display = 'none';
                 btn.disabled = false;
@@ -353,19 +326,19 @@
             connections.forEach((conn, index) => {
                 const card = document.createElement('div');
                 card.className = 'connection-card';
-                card.style.animationDelay = `${index * 0.1}s`;
+                card.style.animationDelay = `${index * 0.15}s`;
                 
                 card.innerHTML = `
                     <div class="card-header">
                         <div class="concept-title">${conn.title}</div>
-                        <div class="subject-tag">${conn.subject}</div>
+                        <div class="subject-tag">${conn.related_field}</div>
                     </div>
                     <div class="big-picture-content">
-                        ${conn.description}
+                        ${conn.connection_narrative}
                     </div>
                     <div class="link-indicator">
-                        <i data-lucide="link" size="14"></i>
-                        <span>${conn.link}</span>
+                        <i data-lucide="info" size="14"></i>
+                        <span>${conn.why_it_matters}</span>
                     </div>
                 `;
                 container.appendChild(card);
