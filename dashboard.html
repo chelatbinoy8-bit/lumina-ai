@@ -168,7 +168,7 @@
                 <p id="dateTarget" style="color: var(--accent-blue); font-size: 0.85rem; font-weight: 600; margin-top: 5px;"></p>
             </div>
             <div class="nav-controls">
-                <button class="btn-secondary btn-danger" onclick="deletePlan()">
+                <button class="btn-secondary btn-danger" onclick="deleteActivePlan()">
                     <i data-lucide="trash-2" size="16"></i> Delete Plan
                 </button>
                 <button class="btn-secondary" onclick="reset()">
@@ -204,6 +204,7 @@
     </div>
 
     <script>
+        // Load initial plan
         let plan = JSON.parse(localStorage.getItem('lumina_active_plan'));
         if(!plan) window.location.href = 'student-home.html';
 
@@ -272,13 +273,10 @@
 
         function navigateWithContext(url, index) {
             if (isIndic && (url === "aichat.html" || url === "knowledge-graphs.html" || url === "flashcards.html")) return;
-
             const currentPlan = JSON.parse(localStorage.getItem('lumina_active_plan'));
             const chapter = currentPlan.chapters[index];
-            
             currentPlan.currentChapter = chapter.title;
             currentPlan.currentDetails = chapter.details;
-            
             localStorage.setItem('lumina_active_chapter_index', index);
             localStorage.setItem('lumina_active_plan', JSON.stringify(currentPlan));
             window.location.href = url;
@@ -287,19 +285,46 @@
         function toggle(i) {
             plan.chapters[i].completed = !plan.chapters[i].completed;
             localStorage.setItem('lumina_active_plan', JSON.stringify(plan));
+            
+            // Also sync back to the master list if needed
+            let allPlans = JSON.parse(localStorage.getItem('lumina_plans_list')) || [];
+            const planIdx = allPlans.findIndex(p => p.subject === plan.subject);
+            if(planIdx !== -1) {
+                allPlans[planIdx] = plan;
+                localStorage.setItem('lumina_plans_list', JSON.stringify(allPlans));
+            }
+
             render();
         }
 
-        function deletePlan() {
-            if(confirm("Are you sure you want to permanently delete this plan? This action cannot be undone.")) {
+        /**
+         * IMPROVED DELETE LOGIC
+         * Removes from active storage AND master list
+         */
+        function deleteActivePlan() {
+            if(!confirm("Are you sure you want to permanently delete this study plan? This cannot be undone.")) return;
+
+            const activePlan = JSON.parse(localStorage.getItem('lumina_active_plan'));
+            let allPlans = JSON.parse(localStorage.getItem('lumina_plans_list')) || [];
+
+            if(activePlan) {
+                // Filter out the plan with the same subject from the master list
+                allPlans = allPlans.filter(p => p.subject !== activePlan.subject);
+                
+                // Save updated master list
+                localStorage.setItem('lumina_plans_list', JSON.stringify(allPlans));
+
+                // Clean up all active session items
                 localStorage.removeItem('lumina_active_plan');
                 localStorage.removeItem('lumina_active_chapter_index');
-                window.location.href = 'student-home.html';
             }
+
+            // Redirect to home
+            window.location.href = "student-home.html";
         }
 
         function reset() {
-            if(confirm("Are you sure you want to discard this roadmap and start a new one?")) {
+            if(confirm("Discard current view and create a completely new roadmap?")) {
                 localStorage.removeItem('lumina_active_plan');
                 localStorage.removeItem('lumina_active_chapter_index');
                 window.location.href = 'index.html';
