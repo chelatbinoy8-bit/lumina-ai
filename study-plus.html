@@ -172,7 +172,7 @@
 
         <div class="step" id="step2">
             <h2>Import Syllabus</h2>
-            <p class="subtitle">Upload a .txt file. Llama 3 will generate your roadmap.</p>
+            <p class="subtitle">Upload a .txt file. Llama 3 will generate your roadmap. (Malayalam & Hindi supported)</p>
             <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
                 <i data-lucide="upload-cloud" size="48" style="color: var(--accent-blue); margin-bottom: 15px;"></i>
                 <div style="font-weight: 700;">Select .txt Syllabus</div>
@@ -228,7 +228,10 @@
                     body: JSON.stringify({
                         model: "llama-3.3-70b-versatile",
                         messages: [
-                            { role: "system", content: "You are an academic planner. Return ONLY a JSON object with a 'chapters' array. Each item has 'title' (string), 'details' (string), and 'completed' (boolean: false). Distribute syllabus logic based on the user's target date." },
+                            { 
+                                role: "system", 
+                                content: "You are an academic planner. You have advanced multilingual capabilities and can perfectly understand syllabi written in English, Malayalam, and Hindi. Return ONLY a JSON object with a 'chapters' array. Each item has 'title' (string), 'details' (string), and 'completed' (boolean: false). If the input is in Malayalam or Hindi, translate the generated titles and details into English for the JSON output. Distribute syllabus logic based on the user's target date." 
+                            },
                             { role: "user", content: `Subject: ${subject}. Finish by: ${date}. Syllabus: ${syllabus}` }
                         ],
                         response_format: { type: "json_object" }
