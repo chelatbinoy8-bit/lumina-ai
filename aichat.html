@@ -325,7 +325,7 @@
                 PROTOCOL FOR ADVANCEMENT:
                 - If the student successfully masters the CURRENT milestone and you are ready to move to the NEXT one, you MUST include the tag [ADVANCE] in your response.
                 - If the student provides a perfect final definition and the session is over, include [SESSION_COMPLETE].
-                - If they are wrong, DO NOT include these tags.
+                - IMPORTANT: Do not include [ADVANCE] if the student's logic is flawed or incomplete for the current stage.
 
                 CURRENT MILESTONE: ${milestones[currentMilestoneIndex]}.
             `;
@@ -348,7 +348,7 @@
                     body: JSON.stringify({
                         model: "llama-3.3-70b-versatile",
                         messages: chatHistory,
-                        temperature: 0.4, // Lower temperature for more consistent logic evaluation
+                        temperature: 0.2, // Lowered further for stricter logic evaluation
                         max_tokens: 500
                     })
                 });
@@ -359,10 +359,12 @@
                 // Logic for milestone progression based on AI's evaluation
                 if (aiMsg.includes("[ADVANCE]")) {
                     aiMsg = aiMsg.replace("[ADVANCE]", "").trim();
-                    currentMilestoneIndex++;
-                    updateProgressUI();
-                    // Update system context to focus on new milestone
-                    chatHistory[0].content += `\nSTUENT HAS PASSED PREVIOUS STAGE. CURRENT MILESTONE IS NOW: ${milestones[currentMilestoneIndex]}`;
+                    if (currentMilestoneIndex < milestones.length - 1) {
+                        currentMilestoneIndex++;
+                        updateProgressUI();
+                        // Update system prompt to reflect the new milestone for subsequent turns
+                        chatHistory[0].content = chatHistory[0].content.replace(/CURRENT MILESTONE: .*/, `CURRENT MILESTONE: ${milestones[currentMilestoneIndex]}`);
+                    }
                 }
 
                 if (aiMsg.includes("[SESSION_COMPLETE]")) {
