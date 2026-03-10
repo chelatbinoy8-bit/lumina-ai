@@ -169,7 +169,7 @@
             <!-- Messages appear here -->
         </div>
 
-        <div class="typing" id="typing-indicator">Lumina is formulating a question...</div>
+        <div class="typing" id="typing-indicator">Lumina is formulating a thought...</div>
 
         <form class="input-area" onsubmit="sendMessage(event)">
             <input type="text" id="userInput" placeholder="Share your thoughts..." autocomplete="off">
@@ -183,9 +183,9 @@
         let plan = JSON.parse(localStorage.getItem('lumina_active_plan'));
         const groqKey = localStorage.getItem('lumina_groq_key');
         
-        // Use the specifically selected chapter from dashboard, or default to the next incomplete one
         const activeChapterTitle = plan.currentChapter || plan.chapters.find(c => !c.completed)?.title || plan.chapters[0].title;
         const activeChapterDetails = plan.currentDetails || plan.chapters.find(c => !c.completed)?.details || plan.chapters[0].details;
+        const currentSubject = (plan.subject || "").toLowerCase();
 
         let chatHistory = [];
 
@@ -198,20 +198,41 @@
                 return;
             }
 
+            let subjectSpecialization = "";
+            
+            if (["biology", "physics", "chemistry", "science"].some(s => currentSubject.includes(s))) {
+                subjectSpecialization = `
+                    SPECIFIC BEHAVIOR FOR SCIENCE:
+                    1. For this subject, start with 1-2 engaging story-based examples or metaphors.
+                    2. Continue and evolve these stories/examples throughout the conversation. 
+                    3. If the student doesn't understand, provide more varied examples or dive deeper into the current analogy.
+                    4. IMPORTANT: Only provide formal definitions, scientific terms, or formulas once you are CERTAIN the student has "learned it perfectly" through the stories and examples. 
+                    5. Once the conceptual logic is mastered, summarize with the correct scientific definitions to solidify the exam-readiness.
+                `;
+            } else if (currentSubject.includes("math")) {
+                subjectSpecialization = `
+                    SPECIFIC BEHAVIOR FOR MATH:
+                    1. Use direct questioning and logical discussions.
+                    2. Present small problems or step-by-step logical proofs.
+                    3. Focus on derivation rather than rote memorization of formulas.
+                `;
+            }
+
             const systemPrompt = `
                 You are Lumina, a brilliant Socratic Tutor.
                 CURRENT LESSON: "${activeChapterTitle}"
                 LESSON CONTEXT: "${activeChapterDetails}"
+                SUBJECT: "${currentSubject}"
                 
                 YOUR PEDAGOGICAL PROTOCOL:
-                1. NEVER give direct answers or definitions.
-                2. If the student asks "What is X?", reply with a question about a familiar concept that relates to X.
-                3. If the student makes a mistake, do NOT correct them. Ask: "That's an interesting perspective. If that were true, how would [related concept] work?" to help them find the flaw.
-                4. Focus on ONE sub-concept at a time. Do not overwhelm.
-                5. Use metaphors and storytelling.
-                6. When you feel the student has truly understood the core concept of this chapter, conclude your message with the exact string: "[SESSION_COMPLETE]".
+                1. NEVER give direct answers or definitions early on.
+                2. If the student asks "What is X?", bridge it to a familiar concept or story.
+                3. If the student makes a mistake, ask: "That's an interesting perspective. If that were true, how would [related concept] work?"
+                4. Focus on ONE sub-concept at a time.
+                ${subjectSpecialization}
+                5. When the student has reached complete conceptual mastery, conclude your final teaching message with: "[SESSION_COMPLETE]".
                 
-                Start by asking a single, curiosity-sparking question to introduce this topic.
+                Start by introducing the topic through the lens of your subject specialization (story/example for science, logic/question for math).
             `;
 
             chatHistory.push({ role: "system", content: systemPrompt });
@@ -233,14 +254,13 @@
                         model: "llama-3.3-70b-versatile",
                         messages: chatHistory,
                         temperature: 0.6,
-                        max_tokens: 1000
+                        max_tokens: 1200
                     })
                 });
 
                 const data = await response.json();
                 let aiMsg = data.choices[0].message.content;
                 
-                // Check for session completion trigger
                 if (aiMsg.includes("[SESSION_COMPLETE]")) {
                     aiMsg = aiMsg.replace("[SESSION_COMPLETE]", "").trim();
                     showCompletionUI();
@@ -282,8 +302,8 @@
             const div = document.createElement('div');
             div.className = 'completion-card';
             div.innerHTML = `
-                <h3 style="margin:0; color:var(--success)">Aha! Moment Achieved!</h3>
-                <p style="font-size:0.9rem; margin:10px 0;">You've mastered the core concepts of this chapter.</p>
+                <h3 style="margin:0; color:var(--success)">Aha! Mastery Achieved!</h3>
+                <p style="font-size:0.9rem; margin:10px 0;">You've demonstrated a perfect understanding of this chapter.</p>
                 <button class="btn-complete" onclick="markAsDone()">Mark Topic as Complete</button>
             `;
             flow.appendChild(div);
@@ -291,7 +311,6 @@
         }
 
         function markAsDone() {
-            // Find the chapter in the plan and mark it completed
             plan.chapters = plan.chapters.map(c => {
                 if (c.title === activeChapterTitle) {
                     return { ...c, completed: true };
@@ -304,7 +323,6 @@
         }
 
         function handleExit() {
-            // Clean up temporary selection state before leaving
             delete plan.currentChapter;
             delete plan.currentDetails;
             localStorage.setItem('lumina_active_plan', JSON.stringify(plan));
