@@ -8,26 +8,22 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
-            --bg-dark: #020203;
-            --lumina-glow: rgba(112, 0, 255, 0.15);
-            --accent-purple: #8b5cf6;
-            --accent-blue: #0ea5e9;
+            --bg-dark: #050508;
+            --lumina-purple: #8b5cf6;
+            --lumina-blue: #0ea5e9;
             --text-main: #f8fafc;
-            --text-dim: #94a3b8;
-            --glass: rgba(15, 23, 42, 0.6);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --success: #10b981;
+            --text-dim: #64748b;
+            --glass: rgba(15, 23, 42, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.05);
+            --sidebar-w: 280px;
         }
 
-        * {
-            box-sizing: border-box;
-            -webkit-font-smoothing: antialiased;
-        }
+        * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
 
         body {
             background-color: var(--bg-dark);
             background-image: 
-                radial-gradient(circle at 0% 0%, var(--lumina-glow) 0%, transparent 40%),
+                radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.08) 0%, transparent 40%),
                 radial-gradient(circle at 100% 100%, rgba(14, 165, 233, 0.05) 0%, transparent 40%);
             color: var(--text-main);
             font-family: 'Plus Jakarta Sans', sans-serif;
@@ -37,120 +33,150 @@
             overflow: hidden;
         }
 
-        .chat-container {
+        /* Sidebar Sidebar */
+        .sidebar {
+            width: var(--sidebar-w);
+            border-right: 1px solid var(--glass-border);
+            background: rgba(2, 2, 4, 0.4);
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            padding: 30px 20px;
+            z-index: 20;
+        }
+
+        .sidebar-header { margin-bottom: 40px; }
+        .sidebar-header h1 { font-size: 1.2rem; margin: 0; letter-spacing: 2px; font-weight: 800; color: white; }
+        
+        .chapter-list { flex: 1; overflow-y: auto; }
+        .chapter-item {
+            padding: 12px 15px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            cursor: default;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: 0.3s;
+            border: 1px solid transparent;
+        }
+        .chapter-item.active {
+            background: rgba(139, 92, 246, 0.1);
+            color: white;
+            border-color: rgba(139, 92, 246, 0.2);
+        }
+        .chapter-item.completed { color: #10b981; }
+        .chapter-item i { flex-shrink: 0; }
+
+        /* Main Content */
+        .main-stage {
             flex: 1;
             display: flex;
             flex-direction: column;
-            max-width: 1000px;
-            margin: 0 auto;
             position: relative;
         }
 
         .chat-header {
-            padding: 30px 40px;
+            padding: 30px 50px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(to bottom, var(--bg-dark), transparent);
+            /* Removed background gradient to prevent "black box" artifacts */
             z-index: 10;
         }
 
         .lesson-info p { 
-            font-size: 0.7rem; 
-            color: var(--accent-blue); 
-            margin: 0 0 4px 0; 
+            font-size: 0.65rem; 
+            color: var(--lumina-blue); 
+            margin: 0 0 5px 0; 
             text-transform: uppercase; 
-            letter-spacing: 2px;
-            font-weight: 700;
+            letter-spacing: 3px;
+            font-weight: 800;
         }
 
         .lesson-info h2 { 
-            font-size: 1.4rem; 
+            font-size: 1.5rem; 
             margin: 0; 
             font-weight: 700; 
-            background: linear-gradient(to right, #fff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: white;
         }
 
         #chat-flow {
             flex: 1;
             overflow-y: auto;
-            padding: 0 40px;
+            padding: 0 50px;
             display: flex;
             flex-direction: column;
-            scroll-behavior: smooth;
-            scrollbar-width: none; /* Firefox */
+            scrollbar-width: none;
         }
-        #chat-flow::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+        #chat-flow::-webkit-scrollbar { display: none; }
 
-        /* Message Styling */
         .msg-wrapper {
-            margin-bottom: 40px;
+            margin-bottom: 45px;
             display: flex;
             flex-direction: column;
-            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: slideFade 0.7s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes slideFade {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
         }
 
         .msg-label {
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            font-weight: 800;
+            opacity: 0.5;
         }
 
-        .ai .msg-label { color: var(--accent-purple); }
-        .user .msg-label { color: var(--accent-blue); align-self: flex-end; }
+        .ai .msg-label { color: var(--lumina-purple); opacity: 1; }
+        .user .msg-label { color: var(--lumina-blue); align-self: flex-end; opacity: 1; }
 
         .msg-content {
-            font-size: 1.05rem;
-            line-height: 1.7;
-            color: var(--text-main);
-            max-width: 90%;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            max-width: 85%;
             font-weight: 400;
         }
 
         .ai .msg-content {
-            border-left: 2px solid var(--accent-purple);
-            padding-left: 20px;
+            border-left: 1px solid rgba(139, 92, 246, 0.3);
+            padding-left: 25px;
+            color: #e2e8f0;
         }
 
         .user .msg-content {
             align-self: flex-end;
             text-align: right;
-            border-right: 2px solid var(--accent-blue);
-            padding-right: 20px;
-            color: #cbd5e1;
+            border-right: 1px solid rgba(14, 165, 233, 0.3);
+            padding-right: 25px;
+            color: #94a3b8;
         }
 
         /* Input Area */
-        .input-wrapper {
-            padding: 40px;
-            position: relative;
+        .input-outer {
+            padding: 40px 50px;
         }
 
-        .input-glass {
-            background: var(--glass);
+        .input-container {
+            background: rgba(15, 23, 42, 0.6);
             border: 1px solid var(--glass-border);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
+            backdrop-filter: blur(30px);
+            border-radius: 20px;
             display: flex;
             align-items: center;
-            padding: 8px 12px 8px 24px;
-            transition: all 0.4s ease;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            padding: 10px 15px 10px 25px;
+            transition: 0.4s;
         }
 
-        .input-glass:focus-within {
-            border-color: rgba(139, 92, 246, 0.4);
-            box-shadow: 0 0 30px rgba(139, 92, 246, 0.1);
-            transform: translateY(-2px);
+        .input-container:focus-within {
+            border-color: rgba(139, 92, 246, 0.3);
+            background: rgba(15, 23, 42, 0.8);
         }
 
         input {
@@ -159,118 +185,103 @@
             border: none;
             color: white;
             font-size: 1rem;
-            padding: 12px 0;
             outline: none;
             font-family: inherit;
         }
 
-        input::placeholder { color: var(--text-dim); }
-
         .btn-send {
-            background: var(--accent-purple);
+            background: var(--lumina-purple);
             color: white;
             border: none;
-            width: 44px;
-            height: 44px;
-            border-radius: 18px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-        .btn-send:hover {
-            transform: scale(1.05) rotate(5deg);
-            background: #9d7df7;
-        }
-
-        .btn-back {
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            color: var(--text-dim);
-            padding: 10px 18px;
+            width: 42px;
+            height: 42px;
             border-radius: 14px;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 0.8rem;
+            justify-content: center;
+            transition: 0.3s;
+        }
+        .btn-send:hover { transform: scale(1.05); filter: brightness(1.2); }
+
+        .btn-exit {
+            background: none;
+            border: 1px solid var(--glass-border);
+            color: var(--text-dim);
+            padding: 8px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.75rem;
             font-weight: 600;
             transition: 0.3s;
         }
-        .btn-back:hover { 
-            background: rgba(255,255,255,0.05);
-            color: white;
-            border-color: var(--accent-blue);
-        }
+        .btn-exit:hover { border-color: #ef4444; color: #ef4444; }
 
         .typing { 
-            font-size: 0.75rem; 
-            color: var(--accent-purple); 
-            padding: 0 40px;
-            margin-bottom: 15px;
+            font-size: 0.7rem; 
+            color: var(--lumina-purple); 
+            padding: 0 50px;
+            margin-bottom: 10px;
             display: none;
-            font-weight: 500;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
-        .completion-card {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 78, 59, 0.05));
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            padding: 35px;
-            border-radius: 30px;
-            text-align: center;
+        .completion-ui {
+            background: linear-gradient(to right, rgba(16, 185, 129, 0.05), transparent);
+            border-left: 2px solid #10b981;
+            padding: 30px;
             margin: 40px 0;
-            backdrop-filter: blur(10px);
+            border-radius: 0 20px 20px 0;
         }
 
-        .btn-complete {
-            background: var(--success);
-            color: #052e16;
+        .btn-done {
+            background: #10b981;
+            color: #064e3b;
             border: none;
-            padding: 14px 28px;
-            border-radius: 16px;
+            padding: 12px 24px;
+            border-radius: 12px;
             font-weight: 800;
-            font-size: 0.9rem;
             cursor: pointer;
             margin-top: 20px;
-            transition: 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
         }
-        .btn-complete:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2); }
     </style>
 </head>
 <body>
 
-    <div class="chat-container">
-        <div class="chat-header">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>LUMINA</h1>
+        </div>
+        <div class="chapter-list" id="sidebar-chapters">
+            <!-- Chapters generated here -->
+        </div>
+    </aside>
+
+    <main class="main-stage">
+        <header class="chat-header">
             <div class="lesson-info">
                 <p id="subject-label">Subject</p>
-                <h2 id="lesson-title">Session Initiation</h2>
+                <h2 id="lesson-title">Neural Link Active</h2>
             </div>
-            <button class="btn-back" onclick="handleExit()">
-                <i data-lucide="x" size="18"></i> Finish Session
-            </button>
-        </div>
+            <button class="btn-exit" onclick="handleExit()">Exit Session</button>
+        </header>
 
         <div id="chat-flow">
-            <!-- Messages flow here -->
+            <!-- Messages -->
         </div>
 
-        <div class="typing" id="typing-indicator">
-            <span style="opacity: 0.6">Lumina is contemplating...</span>
-        </div>
+        <div class="typing" id="typing-indicator">Synchronizing Thoughts...</div>
 
-        <div class="input-wrapper">
-            <form class="input-glass" onsubmit="sendMessage(event)">
-                <input type="text" id="userInput" placeholder="Type your realization..." autocomplete="off">
+        <footer class="input-outer">
+            <form class="input-container" onsubmit="sendMessage(event)">
+                <input type="text" id="userInput" placeholder="Explore this thought further..." autocomplete="off">
                 <button type="submit" class="btn-send">
-                    <i data-lucide="arrow-up" size="20"></i>
+                    <i data-lucide="arrow-right" size="18"></i>
                 </button>
             </form>
-        </div>
-    </div>
+        </footer>
+    </main>
 
     <script>
         let plan = JSON.parse(localStorage.getItem('lumina_active_plan'));
@@ -281,48 +292,46 @@
         const currentSubject = (plan.subject || "").toLowerCase();
 
         let chatHistory = [];
+        let messageCount = 0; // Tracking for depth
 
-        document.getElementById('subject-label').innerText = plan.subject;
-        document.getElementById('lesson-title').innerText = activeChapterTitle;
+        function renderSidebar() {
+            const container = document.getElementById('sidebar-chapters');
+            container.innerHTML = '';
+            plan.chapters.forEach(chap => {
+                const div = document.createElement('div');
+                div.className = `chapter-item ${chap.title === activeChapterTitle ? 'active' : ''} ${chap.completed ? 'completed' : ''}`;
+                div.innerHTML = `
+                    <i data-lucide="${chap.completed ? 'check-circle-2' : (chap.title === activeChapterTitle ? 'play' : 'circle')}" size="14"></i>
+                    <span>${chap.title}</span>
+                `;
+                container.appendChild(div);
+            });
+            lucide.createIcons();
+        }
 
         async function initTutor() {
             if (!groqKey) {
-                appendMessage('ai', "Authentication Missing: No API Key found in secure storage.");
+                appendMessage('ai', "Authentication required. Please return to the nexus.");
                 return;
             }
 
-            let subjectSpecialization = "";
-            
-            if (["biology", "physics", "chemistry", "science"].some(s => currentSubject.includes(s))) {
-                subjectSpecialization = `
-                    SPECIFIC BEHAVIOR FOR SCIENCE:
-                    1. Start with 1-2 vivid story-based examples or analogies.
-                    2. Evolve these narratives throughout the chat. 
-                    3. Only provide formal definitions/formulas once the student has "learned it perfectly" via analogies. 
-                    4. Once conceptual mastery is reached, provide a technical summary for exam reference.
-                `;
-            } else if (currentSubject.includes("math")) {
-                subjectSpecialization = `
-                    SPECIFIC BEHAVIOR FOR MATH:
-                    1. Use direct questioning and logical derivation.
-                    2. Guide the student to "discover" the formula through small logic steps.
-                `;
-            }
+            document.getElementById('subject-label').innerText = plan.subject;
+            document.getElementById('lesson-title').innerText = activeChapterTitle;
+            renderSidebar();
 
             const systemPrompt = `
-                You are Lumina, an ethereal and brilliant Socratic Tutor.
-                CURRENT LESSON: "${activeChapterTitle}"
-                LESSON CONTEXT: "${activeChapterDetails}"
-                SUBJECT: "${currentSubject}"
+                You are Lumina, an ethereal Socratic Tutor.
+                TOPIC: "${activeChapterTitle}"
+                CONTEXT: "${activeChapterDetails}"
                 
-                PEDAGOGICAL CORE:
-                1. Never define first. Always evoke curiosity.
-                2. Bridge unknown concepts to familiar life experiences.
-                3. If the student errs, explore the logic of their error to reveal the truth.
-                ${subjectSpecialization}
-                4. Conclude only when mastery is absolute with: "[SESSION_COMPLETE]".
+                CORE DIRECTIVES:
+                1. DO NOT provide the [SESSION_COMPLETE] tag until at least 4-5 turns of deep dialogue have occurred.
+                2. Even if the student says "I understand", challenge them with a "What if?" or "How does this apply to...?" to ensure mastery.
+                3. Use poetic yet precise language. 
+                4. Bridge abstract concepts to tangible metaphors.
                 
-                Tone: Sophisticated, encouraging, and visionary. Start now.
+                CONDITION FOR COMPLETION:
+                Only when the student can explain the core logic back to you in their own words, output "[SESSION_COMPLETE]" at the end of your response.
             `;
 
             chatHistory.push({ role: "system", content: systemPrompt });
@@ -343,7 +352,7 @@
                     body: JSON.stringify({
                         model: "llama-3.3-70b-versatile",
                         messages: chatHistory,
-                        temperature: 0.7,
+                        temperature: 0.65,
                         max_tokens: 1500
                     })
                 });
@@ -351,7 +360,7 @@
                 const data = await response.json();
                 let aiMsg = data.choices[0].message.content;
                 
-                if (aiMsg.includes("[SESSION_COMPLETE]")) {
+                if (aiMsg.includes("[SESSION_COMPLETE]") && messageCount > 3) {
                     aiMsg = aiMsg.replace("[SESSION_COMPLETE]", "").trim();
                     showCompletionUI();
                 }
@@ -359,18 +368,16 @@
                 chatHistory.push({ role: "assistant", content: aiMsg });
                 appendMessage('ai', aiMsg);
             } catch (e) {
-                appendMessage('ai', "My cosmic link has flickered. Please restate your last thought.");
+                appendMessage('ai', "A rift in the connection occurred. Let us re-center.");
             } finally {
                 typing.style.display = 'none';
-                const flow = document.getElementById('chat-flow');
-                flow.scrollTop = flow.scrollHeight;
             }
         }
 
         function appendMessage(role, text) {
             const flow = document.getElementById('chat-flow');
-            const wrapper = document.createElement('div');
-            wrapper.className = `msg-wrapper ${role}`;
+            const wrap = document.createElement('div');
+            wrap.className = `msg-wrapper ${role}`;
             
             const label = document.createElement('div');
             label.className = 'msg-label';
@@ -380,40 +387,36 @@
             content.className = 'msg-content';
             content.innerText = text;
             
-            wrapper.appendChild(label);
-            wrapper.appendChild(content);
-            flow.appendChild(wrapper);
-            
+            wrap.appendChild(label);
+            wrap.appendChild(content);
+            flow.appendChild(wrap);
             flow.scrollTo({ top: flow.scrollHeight, behavior: 'smooth' });
         }
 
         async function sendMessage(e) {
             e.preventDefault();
             const input = document.getElementById('userInput');
-            const text = input.value.trim();
-            if (!text) return;
+            const val = input.value.trim();
+            if (!val) return;
 
-            appendMessage('user', text);
+            messageCount++;
+            appendMessage('user', val);
             input.value = '';
-            chatHistory.push({ role: "user", content: text });
-            
+            chatHistory.push({ role: "user", content: val });
             await callGroq();
         }
 
         function showCompletionUI() {
             const flow = document.getElementById('chat-flow');
             const div = document.createElement('div');
-            div.className = 'completion-card';
+            div.className = 'completion-ui';
             div.innerHTML = `
-                <div style="font-size: 2.5rem; margin-bottom: 10px;">✨</div>
-                <h3 style="margin:0; color:var(--success); font-weight:800; font-size:1.5rem;">Knowledge Crystallized</h3>
-                <p style="font-size:1rem; margin:15px 0; opacity:0.8; color:white;">You've reached the core of this concept. Ready to move forward?</p>
-                <button class="btn-complete" onclick="markAsDone()">Mark as Mastered</button>
+                <h3 style="margin:0; color:#10b981; font-weight:800;">Mastery Crystallized</h3>
+                <p style="font-size:0.95rem; margin:10px 0; color:var(--text-dim);">You have successfully integrated the logic of this chapter into your understanding.</p>
+                <button class="btn-done" onclick="markAsDone()">Solidify Progress</button>
             `;
             flow.appendChild(div);
-            setTimeout(() => {
-                flow.scrollTo({ top: flow.scrollHeight, behavior: 'smooth' });
-            }, 100);
+            flow.scrollTo({ top: flow.scrollHeight, behavior: 'smooth' });
         }
 
         function markAsDone() {
@@ -426,14 +429,10 @@
         }
 
         function handleExit() {
-            delete plan.currentChapter;
-            delete plan.currentDetails;
-            localStorage.setItem('lumina_active_plan', JSON.stringify(plan));
             window.location.href = 'dashboard.html';
         }
 
         window.onload = () => {
-            lucide.createIcons();
             initTutor();
         };
     </script>
