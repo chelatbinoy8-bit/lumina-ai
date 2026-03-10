@@ -16,6 +16,7 @@
             --text-main: #ffffff;
             --text-dim: #a0a0a0;
             --card-hover: rgba(255, 255, 255, 0.06);
+            --disabled: rgba(100, 100, 100, 0.2);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -100,10 +101,17 @@
             color: inherit;
         }
 
-        .mode-btn:hover {
+        .mode-btn:not(.disabled):hover {
             background: var(--card-hover);
             border-color: var(--accent-blue);
             transform: translateY(-3px);
+        }
+
+        .mode-btn.disabled {
+            opacity: 0.3;
+            filter: grayscale(1);
+            cursor: not-allowed;
+            pointer-events: none;
         }
 
         .mode-btn i { color: var(--accent-blue); }
@@ -180,6 +188,15 @@
         let plan = JSON.parse(localStorage.getItem('lumina_active_plan'));
         if(!plan) window.location.href = 'index.html';
 
+        // Detect if text contains Hindi or Malayalam characters
+        function isIndicScript(text) {
+            const malayalam = /[\u0D00-\u0D7F]/;
+            const hindi = /[\u0900-\u097F]/;
+            return malayalam.test(text) || hindi.test(text);
+        }
+
+        const isIndic = isIndicScript(plan.subject);
+
         function render() {
             document.getElementById('subTitle').innerText = plan.subject;
             document.getElementById('dateTarget').innerText = "TARGET COMPLETION: " + plan.targetDate;
@@ -203,11 +220,11 @@
                         </div>
                     </div>
                     <div class="study-modes">
-                        <button onclick='navigateWithContext("aichat.html", ${i})' class="mode-btn">
+                        <button onclick='navigateWithContext("aichat.html", ${i})' class="mode-btn ${isIndic ? 'disabled' : ''}">
                             <i data-lucide="message-circle" size="20"></i>
                             <span>Socratic Tutoring</span>
                         </button>
-                        <button onclick='navigateWithContext("knowledge-graphs.html", ${i})' class="mode-btn">
+                        <button onclick='navigateWithContext("knowledge-graphs.html", ${i})' class="mode-btn ${isIndic ? 'disabled' : ''}">
                             <i data-lucide="git-branch" size="20"></i>
                             <span>Knowledge Graph</span>
                         </button>
@@ -215,7 +232,7 @@
                             <i data-lucide="file-text" size="20"></i>
                             <span>Cornell Notes</span>
                         </button>
-                        <button onclick='navigateWithContext("flashcards.html", ${i})' class="mode-btn">
+                        <button onclick='navigateWithContext("flashcards.html", ${i})' class="mode-btn ${isIndic ? 'disabled' : ''}">
                             <i data-lucide="layers" size="20"></i>
                             <span>SRS Deck</span>
                         </button>
@@ -235,27 +252,18 @@
             lucide.createIcons();
         }
 
-        /**
-         * UPDATED NAVIGATION:
-         * This saves the index and chapter data to local storage.
-         * All future pages (flashcards, exams, etc.) can now simply read 
-         * 'lumina_active_chapter_index' to know which chapter they are working on.
-         */
         function navigateWithContext(url, index) {
+            // Prevention for disabled buttons
+            if (isIndic && (url === "aichat.html" || url === "knowledge-graphs.html" || url === "flashcards.html")) return;
+
             const currentPlan = JSON.parse(localStorage.getItem('lumina_active_plan'));
             const chapter = currentPlan.chapters[index];
             
-            // Set the focus context inside the plan object
             currentPlan.currentChapter = chapter.title;
             currentPlan.currentDetails = chapter.details;
             
-            // Save the index explicitly for pages like summaries.html
             localStorage.setItem('lumina_active_chapter_index', index);
-            
-            // Update the plan object in storage (keeps track of subject, date, and focus)
             localStorage.setItem('lumina_active_plan', JSON.stringify(currentPlan));
-            
-            // Redirect to the tool (flashcards.html, exams.html, etc.)
             window.location.href = url;
         }
 
