@@ -33,7 +33,7 @@
             overflow: hidden;
         }
 
-        /* Sidebar */
+        /* Sidebar Focused on Single Topic */
         .sidebar {
             width: var(--sidebar-w);
             border-right: 1px solid var(--glass-border);
@@ -55,6 +55,7 @@
         }
         .topic-header h2 { font-size: 1.4rem; margin: 8px 0 0 0; color: white; line-height: 1.2; }
 
+        /* Progress Visualizer */
         .mastery-card {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid var(--glass-border);
@@ -70,6 +71,7 @@
         .progress-bar-bg { height: 6px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden; }
         .progress-bar-fill { height: 100%; background: linear-gradient(to right, var(--lumina-purple), var(--lumina-blue)); width: 0%; transition: 1s cubic-bezier(0.16, 1, 0.3, 1); }
 
+        /* Aspect List */
         .aspects-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 15px; font-weight: 700; }
         .aspect-list { flex: 1; overflow-y: auto; }
         .aspect-item {
@@ -84,6 +86,7 @@
         }
         .aspect-item.completed { color: #10b981; }
         .aspect-item.active { color: white; font-weight: 600; }
+        .aspect-item i { flex-shrink: 0; }
 
         /* Main Content */
         .main-stage {
@@ -94,7 +97,7 @@
         }
 
         .chat-header {
-            padding: 20px 50px;
+            padding: 30px 50px;
             display: flex;
             justify-content: flex-end;
             align-items: center;
@@ -210,7 +213,7 @@
     <aside class="sidebar">
         <div class="topic-header">
             <span>Active Module</span>
-            <h2 id="active-topic-title">Initializing...</h2>
+            <h2 id="active-topic-title">Loading...</h2>
         </div>
 
         <div class="mastery-card">
@@ -249,36 +252,19 @@
     </main>
 
     <script>
-        // State Management
-        let plan = JSON.parse(localStorage.getItem('lumina_active_plan')) || { chapters: [] };
+        const defaultPlan = {
+            subject: "Neural Science",
+            chapters: [
+                { title: "Synaptic Plasticity", details: "The ability of synapses to strengthen or weaken over time.", completed: false }
+            ]
+        };
+
+        let plan = JSON.parse(localStorage.getItem('lumina_active_plan')) || defaultPlan;
         const groqKey = localStorage.getItem('lumina_groq_key') || "";
         
-        // FIX: Prioritize forced index from dashboard
-        function getActiveChapterData() {
-            const forcedIndex = localStorage.getItem('lumina_current_chapter_index');
-            
-            if (forcedIndex !== null && forcedIndex !== undefined) {
-                const idx = parseInt(forcedIndex);
-                if (plan.chapters && plan.chapters[idx]) {
-                    console.log("Loading specific chapter from index:", idx);
-                    return { chapter: plan.chapters[idx], index: idx };
-                }
-            }
-            
-            // Fallback: First unfinished
-            const firstUnfinished = plan.chapters ? plan.chapters.findIndex(c => !c.completed) : -1;
-            if (firstUnfinished !== -1) {
-                return { chapter: plan.chapters[firstUnfinished], index: firstUnfinished };
-            }
-
-            return { chapter: plan.chapters ? plan.chapters[0] : null, index: 0 };
-        }
-
-        const activeData = getActiveChapterData();
-        const activeChapter = activeData.chapter;
-        const activeChapterIndex = activeData.index;
-
-        // Enhanced progression logic
+        const activeChapter = plan.chapters.find(c => !c.completed) || plan.chapters[0];
+        
+        // UPDATED: Milestones designed for full, comprehensive chapter mastery
         const milestones = [
             "Chapter Overview & Scope",
             "Definitions & Core Concepts",
@@ -291,8 +277,6 @@
         let chatHistory = [];
 
         function updateProgressUI() {
-            if (!activeChapter) return;
-            
             const pct = Math.round((currentMilestoneIndex / milestones.length) * 100);
             document.getElementById('progress-pct').innerText = `${pct}%`;
             document.getElementById('progress-fill').style.width = `${pct}%`;
@@ -315,54 +299,52 @@
         }
 
         async function initTutor() {
-            if (!activeChapter) {
-                appendMessage('ai', "Neural link failed. No active module detected. Please return to your Dashboard.");
-                return;
-            }
-
             if (!groqKey) {
-                appendMessage('ai', "Neural Key missing. Please provide your Groq API key in system settings.");
+                appendMessage('ai', "Neural Key missing. Please provide your Groq API key in the settings.");
                 return;
             }
 
             document.getElementById('active-topic-title').innerText = activeChapter.title;
             updateProgressUI();
 
-            // Socratic logic setup
+            // UPDATED: System prompt designed to process and teach massive chapter texts
             const systemPrompt = `
-                You are Lumina, an elite Socratic Tutor. achievement of absolute mastery is the goal.
+                You are Lumina, an elite Socratic Tutor. Your objective is to help the student achieve absolute mastery of an ENTIRE chapter.
                 
-                ACTIVE CHAPTER: "${activeChapter.title}"
-                CHAPTER DETAILS: "${activeChapter.details}"
+                CHAPTER TITLE: "${activeChapter.title}"
+                CHAPTER CONTENT: "${activeChapter.details}"
                 
-                YOUR PEDAGOGICAL PROTOCOL:
-                1. Always start by listing ALL topics/sub-points covered in this chapter to define the "Overview & Scope".
-                2. Progression is strictly milestone-based:
-                   - MILESTONE 1: Overview & Scope (Intro all topics).
-                   - MILESTONE 2: Definitions & Core Concepts (What are they?).
-                   - MILESTONE 3: Detailed Mechanisms (How do they work/interact?).
-                   - MILESTONE 4: Synthesis (Critical thinking/Application).
-                   - MILESTONE 5: Mastery (Final review).
-                3. Do not lecture. Ask probing questions to lead the student to the answer.
-                4. When you feel the student has demonstrated sufficient understanding of the CURRENT milestone, output "[ADVANCE]" followed by the transition.
-                5. When everything is finished, output "[SESSION_COMPLETE]".
+                This content is highly detailed and comprehensive. You must guide the student through EVERY SINGLE concept, heading, definition, fact, and keyword present in the CHAPTER CONTENT. Do not rush. This will be a long, multi-turn session.
+                
+                CURRENT PHASE: ${milestones[currentMilestoneIndex]}.
+                
+                PHASE DESCRIPTIONS:
+                1. Chapter Overview & Scope: Help the student understand the big picture, context, and why this entire chapter matters.
+                2. Definitions & Core Concepts: Go through the content sequentially. Teach every major definition, basic terminology, and core concept. 
+                3. Detailed Mechanisms & Analysis: Dive into the deeper processes, cause-effect relationships, step-by-step logic, and complex explanations found in the text.
+                4. Synthesis & Application: Challenge the student to connect multiple concepts from the chapter together or apply them to analytical scenarios.
+                5. Final Chapter Mastery: Have the student summarize the whole chapter perfectly or pass a final, rigorous conceptual test covering everything.
 
-                CURRENT MILESTONE: ${milestones[currentMilestoneIndex]}
+                SOCRATIC RULES:
+                - Teach ONE sub-topic or definition at a time. Do not overwhelm the student by dumping the whole chapter on them at once. Ask guiding questions.
+                - NEVER just give the answer or define the concept for them immediately. Provide hints, ask leading questions, and make the student think and extract the knowledge.
+                - If their answer is wrong, vague, or misses a keyword from the text, DO NOT advance. Correct their logic gently with a new question.
+                - Ensure every single detail from the "CHAPTER CONTENT" is covered before finishing the session.
+                - Be patient. Only move to the next topic within the phase when the current one is mastered.
+
+                PROTOCOL FOR ADVANCEMENT:
+                - When the student has completely mastered ALL topics and concepts belonging to the CURRENT PHASE, output the exact tag [ADVANCE]. 
+                - Do NOT use [ADVANCE] prematurely. You will likely need many messages and back-and-forth interactions to complete a single phase, especially for a large chapter.
+                - Once the student has mastered the "Final Chapter Mastery" phase and knows the whole text flawlessly, output [SESSION_COMPLETE].
             `;
 
             chatHistory.push({ role: "system", content: systemPrompt });
-            
-            // Generate the first syllabus-aware message
-            await callGroq("Please introduce the chapter, list the topics we will cover based on the details, and start the 'Overview & Scope' milestone.");
+            await callGroq();
         }
 
-        async function callGroq(forcedPrompt = null) {
+        async function callGroq() {
             const typing = document.getElementById('typing-indicator');
             typing.style.display = 'block';
-
-            if (forcedPrompt) {
-                chatHistory.push({ role: "user", content: forcedPrompt });
-            }
 
             try {
                 const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -374,22 +356,22 @@
                     body: JSON.stringify({
                         model: "llama-3.3-70b-versatile",
                         messages: chatHistory,
-                        temperature: 0.4, 
-                        max_tokens: 1000
+                        temperature: 0.2, 
+                        max_tokens: 800
                     })
                 });
 
                 const data = await response.json();
                 let aiMsg = data.choices[0].message.content;
                 
-                // Process ADVANCE signal
+                // Logic for milestone progression based on AI's evaluation
                 if (aiMsg.includes("[ADVANCE]")) {
                     aiMsg = aiMsg.replace("[ADVANCE]", "").trim();
                     if (currentMilestoneIndex < milestones.length - 1) {
                         currentMilestoneIndex++;
                         updateProgressUI();
-                        // Update the system instruction in history so AI knows the new stage
-                        chatHistory[0].content = chatHistory[0].content.replace(/CURRENT MILESTONE: .*/, `CURRENT MILESTONE: ${milestones[currentMilestoneIndex]}`);
+                        // Update system prompt to reflect the new milestone for subsequent turns
+                        chatHistory[0].content = chatHistory[0].content.replace(/CURRENT PHASE: .*/, `CURRENT PHASE: ${milestones[currentMilestoneIndex]}`);
                     }
                 }
 
@@ -403,7 +385,7 @@
                 chatHistory.push({ role: "assistant", content: aiMsg });
                 appendMessage('ai', aiMsg);
             } catch (e) {
-                appendMessage('ai', "Signal interference detected. Please verify your connection or API key.");
+                appendMessage('ai', "Signal interference. Check your connection or API key.");
             } finally {
                 typing.style.display = 'none';
             }
@@ -445,22 +427,24 @@
             const div = document.createElement('div');
             div.className = 'completion-ui';
             div.innerHTML = `
-                <h2 style="margin:0; color:#10b981; font-weight:800;">CHAPTER MASTERED</h2>
-                <p style="margin:15px 0; color:var(--text-dim);">The core architecture of "${activeChapter.title}" has been successfully synthesized.</p>
-                <button class="btn-done" onclick="markAsDone()">Archive Knowledge & Exit</button>
+                <h2 style="margin:0; color:#10b981; font-weight:800; letter-spacing:-1px;">100% MASTERY</h2>
+                <p style="font-size:1.1rem; margin:15px 0; color:var(--text-dim);">The architecture of ${activeChapter.title} is now a part of your cognitive framework.</p>
+                <button class="btn-done" onclick="markAsDone()">Archive Knowledge</button>
             `;
             flow.appendChild(div);
             flow.scrollTo({ top: flow.scrollHeight, behavior: 'smooth' });
         }
 
         function markAsDone() {
-            plan.chapters[activeChapterIndex].completed = true;
+            plan.chapters = plan.chapters.map(c => {
+                if (c.title === activeChapter.title) return { ...c, completed: true };
+                return c;
+            });
             localStorage.setItem('lumina_active_plan', JSON.stringify(plan));
-            handleExit();
+            window.location.href = 'dashboard.html';
         }
 
         function handleExit() {
-            localStorage.removeItem('lumina_current_chapter_index');
             window.location.href = 'dashboard.html';
         }
 
