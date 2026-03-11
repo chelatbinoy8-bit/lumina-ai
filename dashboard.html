@@ -271,14 +271,24 @@
             lucide.createIcons();
         }
 
+        /**
+         * UPDATED NAVIGATION LOGIC
+         * Ensures the specific clicked chapter becomes the active one for the next page
+         */
         function navigateWithContext(url, index) {
             if (isIndic && (url === "aichat.html" || url === "knowledge-graphs.html" || url === "flashcards.html")) return;
+            
             const currentPlan = JSON.parse(localStorage.getItem('lumina_active_plan'));
             const chapter = currentPlan.chapters[index];
+            
+            // Set context for the receiver (Socratic Tutor, etc)
             currentPlan.currentChapter = chapter.title;
             currentPlan.currentDetails = chapter.details;
+            
+            // Update plan state so receivers find this chapter immediately
             localStorage.setItem('lumina_active_chapter_index', index);
             localStorage.setItem('lumina_active_plan', JSON.stringify(currentPlan));
+            
             window.location.href = url;
         }
 
@@ -297,10 +307,6 @@
             render();
         }
 
-        /**
-         * IMPROVED DELETE LOGIC
-         * Removes from active storage AND master list
-         */
         function deleteActivePlan() {
             if(!confirm("Are you sure you want to permanently delete this study plan? This cannot be undone.")) return;
 
@@ -308,18 +314,12 @@
             let allPlans = JSON.parse(localStorage.getItem('lumina_plans_list')) || [];
 
             if(activePlan) {
-                // Filter out the plan with the same subject from the master list
                 allPlans = allPlans.filter(p => p.subject !== activePlan.subject);
-                
-                // Save updated master list
                 localStorage.setItem('lumina_plans_list', JSON.stringify(allPlans));
-
-                // Clean up all active session items
                 localStorage.removeItem('lumina_active_plan');
                 localStorage.removeItem('lumina_active_chapter_index');
             }
 
-            // Redirect to home
             window.location.href = "student-home.html";
         }
 
