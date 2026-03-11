@@ -1,532 +1,709 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Lumina | Concept Mapper</title>
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
     <script src="https://unpkg.com/lucide@latest"></script>
+
     <style>
+
         :root {
+
             --bg-dark: #050505;
+
             --accent-purple: #7000ff;
+
             --accent-blue: #00d4ff;
+
             --glass: rgba(255, 255, 255, 0.03);
+
             --glass-border: rgba(255, 255, 255, 0.1);
+
             --text-main: #ffffff;
+
             --text-dim: #a0a0a0;
-            --card-bg: rgba(15, 15, 15, 0.8);
+
+            --card-bg: rgba(15, 15, 15, 0.6);
+
             --error: #ff4b4b;
+
         }
+
+
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
+
+
         body {
+
             background-color: var(--bg-dark);
+
             color: var(--text-main);
+
             font-family: 'Inter', sans-serif;
-            height: 100vh;
+
+            min-height: 100vh;
+
             display: flex;
+
             flex-direction: column;
-            overflow: hidden;
+
+            overflow-x: hidden;
+
         }
+
+
 
         .ambient-overlay {
+
             position: fixed;
+
             top: 0; left: 0; width: 100%; height: 100%;
+
             z-index: -1;
+
             background: 
-                radial-gradient(circle at 0% 0%, rgba(112, 0, 255, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 100% 100%, rgba(0, 212, 255, 0.08) 0%, transparent 50%);
+
+                radial-gradient(circle at 0% 0%, rgba(112, 0, 255, 0.05) 0%, transparent 50%),
+
+                radial-gradient(circle at 100% 100%, rgba(0, 212, 255, 0.05) 0%, transparent 50%);
+
         }
+
+
 
         nav {
-            padding: 15px 30px;
+
+            padding: 20px 40px;
+
             display: flex;
+
             justify-content: space-between;
+
             align-items: center;
+
             border-bottom: 1px solid var(--glass-border);
+
             backdrop-filter: blur(20px);
+
+            position: sticky;
+
+            top: 0;
+
             z-index: 100;
+
         }
+
+
 
         .logo-area { display: flex; align-items: center; gap: 15px; cursor: pointer; }
+
         .logo { font-weight: 800; letter-spacing: 2px; font-size: 1.2rem; background: linear-gradient(to right, #fff, var(--accent-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        .app-layout {
-            display: flex;
-            flex: 1;
-            position: relative;
-            overflow: hidden;
+
+
+        main { 
+
+            max-width: 900px; 
+
+            margin: 40px auto; 
+
+            padding: 0 20px;
+
+            width: 100%;
+
         }
 
-        /* Side Panel */
-        .side-panel {
-            width: 350px;
-            background: rgba(10, 10, 10, 0.8);
-            border-right: 1px solid var(--glass-border);
-            padding: 25px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            z-index: 20;
-            backdrop-filter: blur(10px);
+
+
+        .header-section {
+
+            text-align: center;
+
+            margin-bottom: 50px;
+
         }
 
-        .header-section h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 10px; }
-        .header-section p { color: var(--text-dim); font-size: 0.9rem; line-height: 1.4; }
+
+
+        .header-section h1 {
+
+            font-size: 2.5rem;
+
+            font-weight: 800;
+
+            margin-bottom: 15px;
+
+            letter-spacing: -1px;
+
+        }
+
+
+
+        .header-section p {
+
+            color: var(--text-dim);
+
+            font-size: 1.1rem;
+
+            max-width: 600px;
+
+            margin: 0 auto;
+
+        }
+
+
+
+        .control-panel {
+
+            background: var(--glass);
+
+            border: 1px solid var(--glass-border);
+
+            padding: 30px;
+
+            border-radius: 24px;
+
+            margin-bottom: 40px;
+
+            text-align: center;
+
+        }
+
+
 
         .btn-generate {
+
             background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
-            color: white; border: none; padding: 14px; border-radius: 12px;
+
+            color: white; border: none; padding: 16px 32px; border-radius: 14px;
+
             font-weight: 700; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
+
+            display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+
             transition: 0.3s;
-            font-size: 0.9rem;
-            width: 100%;
+
+            font-size: 1rem;
+
         }
 
-        .btn-generate:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(112, 0, 255, 0.3); }
+
+
+        .btn-generate:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(112, 0, 255, 0.2); }
+
         .btn-generate:disabled { opacity: 0.5; cursor: wait; }
 
-        #node-details {
-            flex: 1;
-            overflow-y: auto;
-            background: var(--glass);
-            border-radius: 16px;
-            padding: 20px;
+
+
+        .connection-grid {
+
+            display: grid;
+
+            gap: 20px;
+
+            padding-bottom: 50px;
+
+        }
+
+
+
+        .connection-card {
+
+            background: var(--card-bg);
+
             border: 1px solid var(--glass-border);
-            display: none;
-            animation: fadeIn 0.3s ease;
+
+            border-radius: 20px;
+
+            padding: 25px;
+
+            transition: 0.3s;
+
+            animation: slideUp 0.5s ease forwards;
+
+            opacity: 0;
+
         }
 
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* Graph Canvas */
-        #canvas-container {
-            flex: 1;
-            position: relative;
-            background: radial-gradient(circle at center, #111 0%, #050505 100%);
-            cursor: grab;
+
+        @keyframes slideUp { 
+
+            from { opacity: 0; transform: translateY(20px); } 
+
+            to { opacity: 1; transform: translateY(0); } 
+
         }
 
-        #canvas-container:active { cursor: grabbing; }
 
-        canvas { width: 100%; height: 100%; }
 
-        .controls-hint {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: var(--glass);
-            padding: 10px 15px;
-            border-radius: 10px;
-            font-size: 0.75rem;
-            color: var(--text-dim);
-            pointer-events: none;
+        .card-header {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: flex-start;
+
+            margin-bottom: 15px;
+
         }
 
-        .loading-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
-            display: none;
-            flex-direction: column;
-            justify-content: center;
+
+
+        .concept-title {
+
+            font-size: 1.25rem;
+
+            font-weight: 700;
+
+            color: var(--accent-blue);
+
+        }
+
+
+
+        .subject-tag {
+
+            font-size: 0.7rem;
+
+            font-weight: 700;
+
+            background: rgba(255,255,255,0.1);
+
+            padding: 4px 10px;
+
+            border-radius: 6px;
+
+            text-transform: uppercase;
+
+            letter-spacing: 1px;
+
+            color: var(--accent-purple);
+
+        }
+
+
+
+        .big-picture-content {
+
+            line-height: 1.6;
+
+            color: #ddd;
+
+            margin-bottom: 20px;
+
+            font-size: 0.95rem;
+
+        }
+
+
+
+        .link-indicator {
+
+            display: flex;
+
             align-items: center;
-            z-index: 30;
-            backdrop-filter: blur(5px);
+
+            gap: 10px;
+
+            font-size: 0.85rem;
+
+            font-weight: 600;
+
+            color: var(--text-dim);
+
+            margin-top: 15px;
+
+            padding-top: 15px;
+
+            border-top: 1px solid rgba(255,255,255,0.05);
+
+            font-style: italic;
+
         }
+
+
+
+        #loading {
+
+            display: none;
+
+            text-align: center;
+
+            padding: 40px;
+
+        }
+
+
 
         .loader-spin {
-            width: 50px; height: 50px;
-            border: 4px solid var(--glass-border);
+
+            width: 40px; height: 40px;
+
+            border: 3px solid var(--glass-border);
+
             border-top-color: var(--accent-blue);
+
             border-radius: 50%;
+
             animation: spin 1s linear infinite;
-            margin-bottom: 20px;
+
+            margin: 0 auto 20px;
+
         }
+
+
 
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        .error-message {
-            color: var(--error);
-            background: rgba(255, 75, 75, 0.1);
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            border: 1px solid var(--error);
-            margin-top: 10px;
+
+
+        .empty-state {
+
+            text-align: center;
+
+            padding: 60px;
+
+            color: var(--text-dim);
+
         }
 
-        .subject-tag {
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 700;
+
+
+        .error-message {
+
+            color: var(--error);
+
+            background: rgba(255, 75, 75, 0.1);
+
+            padding: 15px;
+
+            border-radius: 12px;
+
+            margin-top: 20px;
+
+            border: 1px solid var(--error);
+
         }
+
     </style>
+
 </head>
+
 <body>
+
+
 
     <div class="ambient-overlay"></div>
 
+
+
     <nav>
-        <div class="logo-area" id="back-btn">
-            <i data-lucide="chevron-left" size="20"></i>
+
+        <div class="logo-area" onclick="location.href='dashboard.html'">
+
+            <i data-lucide="arrow-left" size="20"></i>
+
             <span class="logo">LUMINA</span>
+
         </div>
+
         <div style="text-align: right;">
-            <div id="current-topic" style="font-weight: 700; font-size: 1rem;">Loading...</div>
-            <div id="current-subject" style="color: var(--accent-blue); font-size: 0.75rem; text-transform: uppercase;">Knowledge Graph</div>
+
+            <div id="current-topic" style="font-weight: 700; font-size: 1rem;">Big Picture View</div>
+
+            <div id="current-subject" style="color: var(--accent-blue); font-size: 0.75rem; text-transform: uppercase;">Subject Insights</div>
+
         </div>
+
     </nav>
 
-    <div class="app-layout">
-        <aside class="side-panel">
-            <div class="header-section">
-                <h1>Concept Mapper</h1>
-                <p>Visualizing the hidden threads that connect your current chapter to the wider universe of ideas.</p>
-            </div>
 
-            <button class="btn-generate" id="gen-btn">
-                <i data-lucide="sparkles" size="18"></i>
-                Map Knowledge Web
+
+    <main>
+
+        <div class="header-section">
+
+            <h1>Concept Mapper</h1>
+
+            <p>Moving beyond definitions. We use AI to weave connections between your topic and the wider world of knowledge.</p>
+
+        </div>
+
+
+
+        <div class="control-panel">
+
+            <button class="btn-generate" id="gen-btn" onclick="startMapping()">
+
+                <i data-lucide="network" size="20"></i>
+
+                Generate Knowledge Links
+
             </button>
 
-            <div id="status-area"></div>
+        </div>
 
-            <div id="node-details">
-                <h3 id="detail-title" style="color: var(--accent-blue); margin-bottom: 10px;">Select a Node</h3>
-                <div id="detail-field" class="subject-tag" style="display: inline-block; background: var(--accent-purple); font-size: 0.6rem; padding: 2px 8px; border-radius: 4px; margin-bottom: 15px;">FIELD</div>
-                <p id="detail-desc" style="font-size: 0.9rem; line-height: 1.5; color: #ccc; margin-bottom: 15px;"></p>
-                <div style="border-top: 1px solid var(--glass-border); padding-top: 15px;">
-                    <small style="color: var(--accent-blue); font-weight: 700;">SIGNIFICANCE</small>
-                    <p id="detail-why" style="font-size: 0.85rem; color: var(--text-dim); margin-top: 5px;"></p>
-                </div>
-            </div>
-        </aside>
 
-        <section id="canvas-container">
-            <canvas id="graph-canvas"></canvas>
-            <div class="controls-hint">Drag nodes to explore • Click for details • AI Synthesized Connections</div>
-            
-            <div class="loading-overlay" id="loading">
-                <div class="loader-spin"></div>
-                <p style="color: var(--accent-blue); font-weight: 600;">AI is synthesizing connections...</p>
+
+        <div id="loading">
+
+            <div class="loader-spin"></div>
+
+            <p style="color: var(--accent-blue); font-weight: 600;">Lumina is exploring interdisciplinary paths...</p>
+
+        </div>
+
+
+
+        <div id="connection-container" class="connection-grid">
+
+            <div class="empty-state">
+
+                <i data-lucide="layers" size="40" style="margin-bottom: 15px; opacity: 0.5;"></i>
+
+                <p>Click the button above to analyze how your topic connects to other fields.</p>
+
             </div>
-        </section>
-    </div>
+
+        </div>
+
+    </main>
+
+
 
     <script>
-        // API Config
-        const apiKey = "";
-        
-        // State Management
+
+        const groqKey = localStorage.getItem('lumina_groq_key');
+
         let plan = JSON.parse(localStorage.getItem('lumina_active_plan'));
-        let nodes = [];
-        let links = [];
-        let draggedNode = null;
-        let selectedNode = null;
-        let mouse = { x: 0, y: 0 };
-        
-        const canvas = document.getElementById('graph-canvas');
-        const ctx = canvas.getContext('2d');
-        const loading = document.getElementById('loading');
-        const statusArea = document.getElementById('status-area');
-        const genBtn = document.getElementById('gen-btn');
 
-        // Initialization
-        window.onload = () => {
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+
             lucide.createIcons();
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-            
-            // Determine active topic from plan
+
             if (plan) {
-                // Prioritize currentChapter if set, otherwise find first incomplete
-                const activeTopic = plan.currentChapter || 
-                                   (plan.chapters && plan.chapters.find(c => !c.completed)?.title) || 
-                                   "Core Concept";
-                
-                document.getElementById('current-topic').innerText = activeTopic;
+
+                // Use selected chapter or first incomplete
+
+                const activeTitle = plan.currentChapter || plan.chapters.find(c => !c.completed)?.title || "General Topic";
+
+                document.getElementById('current-topic').innerText = activeTitle;
+
                 document.getElementById('current-subject').innerText = plan.subject || "Study Area";
-                
-                initCoreNode(activeTopic);
-            } else {
-                document.getElementById('current-topic').innerText = "Perspective";
-                initCoreNode("Interdisciplinary Study");
+
             }
 
-            genBtn.addEventListener('click', generateGraph);
-            requestAnimationFrame(animate);
-        };
+        });
 
-        function resizeCanvas() {
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
-            // Reposition center if needed
-            if (nodes[0] && nodes[0].isCenter) {
-                nodes[0].x = canvas.width / 2;
-                nodes[0].y = canvas.height / 2;
+
+
+        async function startMapping() {
+
+            if (!groqKey) {
+
+                showError("Groq API Key missing. Please set it up in your dashboard first.");
+
+                return;
+
             }
-        }
 
-        function initCoreNode(topic) {
-            nodes = [{
-                id: 'center',
-                label: topic,
-                x: canvas.width / 2,
-                y: canvas.height / 2,
-                r: 45,
-                color: '#7000ff',
-                isCenter: true,
-                field: 'CORE TOPIC',
-                desc: `The central theme of your study session: "${topic}".`,
-                why: 'This serves as the anchor point for all related interdisciplinary concepts.'
-            }];
-            links = [];
-        }
 
-        async function generateGraph() {
+
+            const container = document.getElementById('connection-container');
+
+            const loading = document.getElementById('loading');
+
+            const btn = document.getElementById('gen-btn');
+
+
+
             const topic = document.getElementById('current-topic').innerText;
+
             const subject = document.getElementById('current-subject').innerText;
 
-            loading.style.display = 'flex';
-            statusArea.innerHTML = '';
-            genBtn.disabled = true;
 
-            const prompt = `You are an interdisciplinary knowledge expert. 
-            Topic: "${topic}" within the subject "${subject}".
-            Task: Create a concept map connecting this topic to 6 diverse, non-obvious fields (e.g. if topic is Biology, connect to Game Theory, Architecture, Ethics, etc).
-            Return ONLY a JSON object with a "connections" array. 
-            Each object in array MUST have: "id" (string), "title" (short), "field" (one word), "narrative" (one sentence explanation), "importance" (why it matters).`;
+
+            btn.disabled = true;
+
+            container.innerHTML = '';
+
+            loading.style.display = 'block';
+
+
 
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+
+                const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+
+                    headers: {
+
+                        'Authorization': `Bearer ${groqKey}`,
+
+                        'Content-Type': 'application/json'
+
+                    },
+
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: { responseMimeType: "application/json" }
+
+                        model: "llama-3.3-70b-versatile",
+
+                        messages: [
+
+                            {
+
+                                role: "system",
+
+                                content: "You are an interdisciplinary knowledge expert. Your goal is to help students see the 'Big Picture' by connecting their current study topic to other unrelated fields. Provide exactly 4 high-quality connections. Format the output as a valid JSON array of objects with keys: 'title', 'related_field', 'connection_narrative', 'why_it_matters'."
+
+                            },
+
+                            {
+
+                                role: "user",
+
+                                content: `The student is studying "${topic}" within the subject of "${subject}". Analyze how this specific topic relates to 4 other diverse fields (e.g. Art, Ethics, History, Biology, Economics, etc). Be specific and insightful.`
+
+                            }
+
+                        ],
+
+                        temperature: 0.7,
+
+                        response_format: { type: "json_object" }
+
                     })
+
                 });
 
-                if (!response.ok) throw new Error("Synthesis failed");
+
 
                 const result = await response.json();
-                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                const data = JSON.parse(text);
+
+                // Groq usually returns a JSON string inside the content
+
+                const rawContent = result.choices[0].message.content;
+
+                const parsed = JSON.parse(rawContent);
+
                 
-                processConnections(data.connections);
+
+                // Handle different JSON structures the AI might return
+
+                const connections = parsed.connections || parsed.links || Object.values(parsed)[0];
+
+                
+
+                if (Array.isArray(connections)) {
+
+                    renderConnections(connections);
+
+                } else {
+
+                    throw new Error("Invalid format received");
+
+                }
+
+
 
             } catch (err) {
+
                 console.error(err);
-                statusArea.innerHTML = `<div class="error-message">Failed to synthesize graph. Please try again.</div>`;
+
+                showError("Failed to generate knowledge map. Please verify your Groq API key or try again.");
+
             } finally {
+
                 loading.style.display = 'none';
-                genBtn.disabled = false;
-            }
-        }
 
-        function processConnections(conns) {
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
+                btn.disabled = false;
 
-            conns.forEach((c, i) => {
-                const angle = (i / conns.length) * Math.PI * 2;
-                const dist = 180 + Math.random() * 40;
-                
-                const newNode = {
-                    id: c.id || `node-${Date.now()}-${i}`,
-                    label: c.title,
-                    field: c.field,
-                    desc: c.narrative,
-                    why: c.importance,
-                    x: centerX + Math.cos(angle) * dist,
-                    y: centerY + Math.sin(angle) * dist,
-                    vx: (Math.random() - 0.5) * 5,
-                    vy: (Math.random() - 0.5) * 5,
-                    r: 28,
-                    color: '#00d4ff'
-                };
-
-                nodes.push(newNode);
-                links.push({ source: nodes[0], target: newNode });
-            });
-        }
-
-        // --- Physics Engine ---
-
-        function animate() {
-            updatePhysics();
-            draw();
-            requestAnimationFrame(animate);
-        }
-
-        function updatePhysics() {
-            const friction = 0.94;
-            const springStrength = 0.015;
-            const repulsion = 1200;
-            const idealDist = 180;
-
-            // Repulsion
-            for (let i = 0; i < nodes.length; i++) {
-                for (let j = i + 1; j < nodes.length; j++) {
-                    let dx = nodes[j].x - nodes[i].x;
-                    let dy = nodes[j].y - nodes[i].y;
-                    let distSq = dx * dx + dy * dy || 1;
-                    let dist = Math.sqrt(distSq);
-                    
-                    if (dist < 300) {
-                        let force = repulsion / distSq;
-                        let nx = dx / dist;
-                        let ny = dy / dist;
-                        
-                        if (!nodes[i].isCenter) {
-                            nodes[i].vx -= nx * force;
-                            nodes[i].vy -= ny * force;
-                        }
-                        if (!nodes[j].isCenter) {
-                            nodes[j].vx += nx * force;
-                            nodes[j].vy += ny * force;
-                        }
-                    }
-                }
             }
 
-            // Springs
-            links.forEach(link => {
-                let dx = link.target.x - link.source.x;
-                let dy = link.target.y - link.source.y;
-                let dist = Math.sqrt(dx * dx + dy * dy) || 1;
-                let force = (dist - idealDist) * springStrength;
-                let nx = dx / dist;
-                let ny = dy / dist;
-                
-                if (!link.source.isCenter) {
-                    link.source.vx += nx * force;
-                    link.source.vy += ny * force;
-                }
-                if (!link.target.isCenter) {
-                    link.target.vx -= nx * force;
-                    link.target.vy -= ny * force;
-                }
-            });
-
-            // Update positions
-            nodes.forEach(node => {
-                if (node === draggedNode || node.isCenter) return;
-                
-                node.vx *= friction;
-                node.vy *= friction;
-                node.x += node.vx;
-                node.y += node.vy;
-
-                // Border constraints
-                const margin = 50;
-                if (node.x < margin) { node.x = margin; node.vx *= -0.5; }
-                if (node.x > canvas.width - margin) { node.x = canvas.width - margin; node.vx *= -0.5; }
-                if (node.y < margin) { node.y = margin; node.vy *= -0.5; }
-                if (node.y > canvas.height - margin) { node.y = canvas.height - margin; node.vy *= -0.5; }
-            });
         }
 
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Links
-            ctx.shadowBlur = 0;
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-            ctx.lineWidth = 1.5;
-            links.forEach(link => {
-                ctx.beginPath();
-                ctx.moveTo(link.source.x, link.source.y);
-                ctx.lineTo(link.target.x, link.target.y);
-                ctx.stroke();
+
+        function renderConnections(connections) {
+
+            const container = document.getElementById('connection-container');
+
+            container.innerHTML = '';
+
+
+
+            connections.forEach((conn, index) => {
+
+                const card = document.createElement('div');
+
+                card.className = 'connection-card';
+
+                card.style.animationDelay = `${index * 0.15}s`;
+
+                
+
+                card.innerHTML = `
+
+                    <div class="card-header">
+
+                        <div class="concept-title">${conn.title}</div>
+
+                        <div class="subject-tag">${conn.related_field}</div>
+
+                    </div>
+
+                    <div class="big-picture-content">
+
+                        ${conn.connection_narrative}
+
+                    </div>
+
+                    <div class="link-indicator">
+
+                        <i data-lucide="info" size="14"></i>
+
+                        <span>${conn.why_it_matters}</span>
+
+                    </div>
+
+                `;
+
+                container.appendChild(card);
+
             });
 
-            // Nodes
-            nodes.forEach(node => {
-                const isSelected = selectedNode === node;
-                
-                // Outer glow
-                ctx.shadowBlur = isSelected ? 25 : 12;
-                ctx.shadowColor = node.color;
-                
-                ctx.fillStyle = node.color;
-                ctx.beginPath();
-                ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.shadowBlur = 0;
+            lucide.createIcons();
 
-                // Selection Ring
-                if (isSelected) {
-                    ctx.strokeStyle = '#fff';
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.arc(node.x, node.y, node.r + 5, 0, Math.PI * 2);
-                    ctx.stroke();
-                }
-
-                // Label
-                ctx.fillStyle = "#fff";
-                ctx.font = `bold ${node.isCenter ? '14px' : '11px'} Inter`;
-                ctx.textAlign = "center";
-                
-                const words = node.label.split(' ');
-                if (words.length > 2) {
-                    ctx.fillText(words.slice(0, 2).join(' '), node.x, node.y - 2);
-                    ctx.fillText(words.slice(2).join(' '), node.x, node.y + 12);
-                } else {
-                    ctx.fillText(node.label, node.x, node.y + 5);
-                }
-            });
         }
 
-        // Interaction Handlers
-        canvas.addEventListener('mousedown', e => {
-            const rect = canvas.getBoundingClientRect();
-            mouse.x = e.clientX - rect.left;
-            mouse.y = e.clientY - rect.top;
 
-            const clicked = nodes.find(n => {
-                const dx = n.x - mouse.x;
-                const dy = n.y - mouse.y;
-                return Math.sqrt(dx*dx + dy*dy) < n.r + 10;
-            });
 
-            if (clicked) {
-                draggedNode = clicked;
-                selectedNode = clicked;
-                showDetails(clicked);
-            }
-        });
+        function showError(msg) {
 
-        window.addEventListener('mousemove', e => {
-            if (!draggedNode || draggedNode.isCenter) return;
-            const rect = canvas.getBoundingClientRect();
-            draggedNode.x = e.clientX - rect.left;
-            draggedNode.y = e.clientY - rect.top;
-        });
+            const container = document.getElementById('connection-container');
 
-        window.addEventListener('mouseup', () => {
-            draggedNode = null;
-        });
+            container.innerHTML = `<div class="error-message">${msg}</div>`;
 
-        function showDetails(node) {
-            const detailPanel = document.getElementById('node-details');
-            detailPanel.style.display = 'block';
-            document.getElementById('detail-title').innerText = node.label;
-            document.getElementById('detail-field').innerText = node.field.toUpperCase();
-            document.getElementById('detail-desc').innerText = node.desc;
-            document.getElementById('detail-why').innerText = node.why;
         }
 
-        document.getElementById('back-btn').addEventListener('click', () => {
-             // Logic to return to dashboard
-             console.log("Returning to dashboard...");
-        });
     </script>
+
 </body>
+
 </html>
