@@ -106,6 +106,8 @@
             margin-bottom: 40px;
             width: 100%;
             box-sizing: border-box;
+            max-height: 60vh;
+            overflow-y: auto;
         }
 
         .controls {
@@ -187,7 +189,7 @@
 
     <div id="loader-container">
         <div class="spinner"></div>
-        <p id="status-text">Lumina is generating key insights...</p>
+        <p id="status-text">Lumina is indexing every topic for total coverage...</p>
     </div>
 
     <div id="error-display">
@@ -209,7 +211,7 @@
             <button class="btn" id="prev-btn" onclick="changeCard(-1)">
                 <i data-lucide="chevron-left"></i>
             </button>
-            <span class="progress-text" id="counter">1 / 5</span>
+            <span class="progress-text" id="counter">1 / -</span>
             <button class="btn" id="next-btn" onclick="changeCard(1)">
                 <i data-lucide="chevron-right"></i>
             </button>
@@ -220,7 +222,7 @@
         const plan = JSON.parse(localStorage.getItem('lumina_active_plan'));
         const groqKey = localStorage.getItem('lumina_groq_key');
         
-        // Match the logic from your Socratic Tutor page
+        // PRESERVED LOGIC AS REQUESTED
         const activeChapterTitle = plan?.currentChapter || plan?.chapters?.find(c => !c.completed)?.title || "Chapter";
         const activeChapterDetails = plan?.currentDetails || plan?.chapters?.find(c => !c.completed)?.details || "";
 
@@ -245,15 +247,15 @@
                         messages: [
                             {
                                 role: "system",
-                                content: "You are a study assistant. Create exactly 6-8 concise, high-impact study points for a student. Each point should be a single clear sentence. Format the output as a simple list where each line starts with a dash (-)."
+                                content: "You are an exhaustive study assistant. Your goal is to cover EVERY single topic, definition, point, and sub-point found in the provided content. Do NOT limit the number of points. Create as many flashcards as necessary to ensure 100% coverage of the material. Each point should be a concise, stand-alone sentence. Format the output as a simple list where each line starts with a dash (-). Never use placeholders or summary text."
                             },
                             {
                                 role: "user",
-                                content: `Subject: ${plan.subject}\nTopic: ${activeChapterTitle}\nContext: ${activeChapterDetails}`
+                                content: `Subject: ${plan.subject}\nChapter: ${activeChapterTitle}\nContent to cover: ${activeChapterDetails}`
                             }
                         ],
-                        temperature: 0.5,
-                        max_tokens: 500
+                        temperature: 0.3,
+                        max_tokens: 2048 // Increased to allow for many cards
                     })
                 });
 
