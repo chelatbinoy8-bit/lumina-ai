@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumina | Smart Summaries</title>
+    <title>Lumina | Deep Study Engine</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -68,7 +68,8 @@
             padding: 16px;
             border-radius: 12px;
             animation: slideIn 0.3s ease-out;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            line-height: 1.5;
         }
 
         .content-area {
@@ -79,112 +80,137 @@
         }
 
         .summary-container {
-            max-width: 850px;
+            max-width: 900px;
             margin: 0 auto;
         }
 
         .header { margin-bottom: 50px; }
-        .header h1 { font-size: 3rem; font-weight: 800; letter-spacing: -1px; }
-        .header p { color: var(--accent-blue); font-weight: 700; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px; }
+        .header h1 { font-size: 3.5rem; font-weight: 800; letter-spacing: -2px; line-height: 1; margin-top: 10px;}
+        .header p { color: var(--accent-blue); font-weight: 700; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 2px; }
 
-        .definition-box {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--glass-border);
-            padding: 24px;
-            border-radius: 20px;
-            margin: 24px 0;
-        }
-        .definition-box strong { color: var(--accent-blue); font-size: 1.1rem; display: block; margin-bottom: 8px; }
-
-        .extra-fact-box {
-            border: 1px dashed var(--accent-purple);
-            background: rgba(112, 0, 255, 0.05);
-            padding: 20px;
-            border-radius: 16px;
-            margin: 24px 0;
-        }
-        .extra-fact-tag {
-            color: var(--accent-purple);
+        .section-title {
+            font-size: 1.5rem;
             font-weight: 800;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        .main-point {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-            line-height: 1.7;
-            font-size: 1.05rem;
-            color: #e0e0e0;
-        }
-        .point-bullet { color: var(--accent-purple); font-weight: 900; }
-
-        .btn-quiz {
-            background: var(--accent-purple);
-            color: white;
-            border: none;
-            padding: 20px 40px;
-            border-radius: 16px;
-            font-weight: 700;
-            font-size: 1.1rem;
-            cursor: pointer;
+            color: var(--accent-blue);
+            margin: 60px 0 25px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--glass-border);
             display: flex;
             align-items: center;
             gap: 12px;
-            margin: 60px auto;
-            transition: transform 0.2s;
         }
+
+        .mastery-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            padding: 30px;
+            border-radius: 24px;
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+
+        .definition-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .definition-item {
+            background: var(--glass);
+            padding: 20px;
+            border-radius: 16px;
+            border-left: 4px solid var(--accent-blue);
+        }
+
+        .definition-item strong { color: var(--accent-blue); display: block; margin-bottom: 5px; font-size: 1.1rem; }
+
+        .deep-note {
+            background: linear-gradient(135deg, rgba(112, 0, 255, 0.1), rgba(0, 212, 255, 0.05));
+            border: 1px solid rgba(112, 0, 255, 0.3);
+            padding: 25px;
+            border-radius: 20px;
+            margin: 30px 0;
+            position: relative;
+        }
+
+        .deep-note-label {
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: var(--accent-purple);
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .essay-box {
+            background: rgba(255, 215, 0, 0.03);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+        }
+
+        .essay-q { color: var(--accent-yellow); font-weight: 800; font-size: 1.1rem; margin-bottom: 15px; display: block; }
+        .essay-a { color: #d0d0d0; font-size: 1rem; line-height: 1.8; }
+
+        .point-row { display: flex; gap: 15px; margin-bottom: 18px; line-height: 1.6; }
+        .point-bullet { color: var(--accent-purple); font-weight: 900; flex-shrink: 0; }
 
         #loading { text-align: center; padding: 120px 20px; }
         .spin { animation: rotate 2s linear infinite; }
 
         @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 10px; }
     </style>
 </head>
 <body>
 
     <aside class="sidebar">
         <div class="sidebar-header">
-            <i data-lucide="brain-circuit" size="18"></i>
-            Chapter Intelligence
+            <i data-lucide="microscope" size="18"></i>
+            Deep Research Engine
         </div>
         <div id="feedback-area">
-            <div id="initial-instruction" class="feedback-card" style="color: var(--text-dim); border-style: dashed;">
-                Preparing insights for your current topic...
+            <div class="feedback-card">
+                <strong>Current Objective:</strong>
+                <p style="margin-top:5px; color: var(--text-dim);">Parsing full chapter context to generate extensive, non-summary mastery notes.</p>
+            </div>
+            <div id="status-update" class="feedback-card" style="border-color: var(--accent-purple);">
+                <i data-lucide="loader-2" size="14" class="spin"></i> AI Reasoning in progress...
             </div>
         </div>
-        <button onclick="location.href='dashboard.html'" style="margin-top: auto; background: var(--glass); border: 1px solid var(--glass-border); color: white; padding: 14px; border-radius: 14px; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
-            <i data-lucide="arrow-left" size="16"></i>
-            Back to Dashboard
+        <button onclick="window.history.back()" style="margin-top: auto; background: var(--glass); border: 1px solid var(--glass-border); color: white; padding: 14px; border-radius: 14px; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <i data-lucide="chevron-left" size="16"></i>
+            Back
         </button>
     </aside>
 
     <main class="content-area">
         <div id="loading">
-            <i data-lucide="loader-2" size="48" class="spin" style="color: var(--accent-blue); margin-bottom: 24px;"></i>
-            <h2 id="loading-text" style="font-weight: 700;">Analyzing Chapter Data...</h2>
+            <i data-lucide="zap" size="48" class="spin" style="color: var(--accent-yellow); margin-bottom: 24px;"></i>
+            <h2 id="loading-text" style="font-weight: 800; font-size: 1.5rem;">Synthesizing Extensive Knowledge Base...</h2>
+            <p style="color: var(--text-dim); margin-top: 10px;">This takes a moment because we are generating full-length educational content.</p>
         </div>
 
         <div class="summary-container" id="summary-content" style="display: none;">
             <header class="header">
-                <p id="sub-tag">Loading...</p>
-                <h1 id="chapter-title">Loading...</h1>
+                <p id="sub-tag">Academic Field</p>
+                <h1 id="chapter-title">Chapter Title</h1>
             </header>
             
             <div id="dynamic-text"></div>
-            
-            <button id="start-quiz-btn" class="btn-quiz" style="display: none;" onclick="startQuiz()">
-                <i data-lucide="play-circle"></i>
-                Start Assessment
-            </button>
         </div>
     </main>
 
     <script>
+        // Configuration
         const groqKey = localStorage.getItem('lumina_groq_key');
         const plan = JSON.parse(localStorage.getItem('lumina_active_plan'));
         const activeIdx = parseInt(localStorage.getItem('lumina_active_chapter_index')) || 0;
@@ -195,7 +221,7 @@
             return malayalam.test(text) || hindi.test(text);
         }
 
-        const isIndic = isIndicScript(plan.subject);
+        const isIndic = plan ? isIndicScript(plan.subject) : false;
 
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
@@ -203,39 +229,37 @@
                 const targetChapter = plan.chapters[activeIdx];
                 document.getElementById('chapter-title').innerText = targetChapter.title;
                 document.getElementById('sub-tag').innerText = plan.subject;
-                
-                if (isIndic) {
-                    document.getElementById('loading-text').innerText = "Preparing Literary Analysis (Aashayam)...";
-                }
-
-                await generateSummaries(targetChapter);
+                await generateDeepNotes(targetChapter);
             } else {
-                window.location.href = 'dashboard.html';
+                console.error("No active plan or chapter found.");
             }
         });
 
-        async function generateSummaries(chapter) {
-            // Determine prompt based on language
-            const systemPrompt = isIndic ? 
-                `You are a literature expert. For the given Malayalam/Hindi chapter, provide an EXTENDED literary analysis.
-                Rule 1: Focus on the "Aashayam" (Core Essence/Summary) in great detail.
-                Rule 2: Include a dedicated section for the "Author/Kavi Profile".
-                Rule 3: Provide 5-7 most important Essay-type questions and answers.
-                Rule 4: NO QUIZ questions needed. Output JSON only.
-                JSON Schema: {
-                  "aashayam": "long narrative string",
-                  "author": "string about author",
-                  "essay_questions": [{"q": "", "a": ""}],
-                  "key_points": ["point 1", "point 2"]
-                }` :
-                `You are an expert tutor. Create a study summary. Output JSON.
-                JSON Schema: {
-                  "definitions": [{"term":"", "definition":""}], 
-                  "points": [{"text":"", "isHighlighted":true}], 
-                  "extra_facts": [{"title":"", "text":""}], 
-                  "narrative": "",
-                  "quiz_questions": [{"question":"", "options":[], "correct_index":0, "explanation":""}]
-                }`;
+        async function generateDeepNotes(chapter) {
+            const systemPrompt = `You are a Senior Academic Researcher and Professor. 
+            TASK: Instead of a summary, generate an EXHAUSTIVE, LONG-FORM knowledge base for the topic.
+            
+            GUIDELINES:
+            1. EXTEND: Don't just summarize. If a topic mentions "Photosynthesis", explain the light-dependent and light-independent reactions in high detail.
+            2. STRUCTURE: Use academic sections.
+            3. ANALOGIES: Use real-world examples to explain complex theories.
+            4. VOLUME: Provide at least 800-1200 words of core content logic.
+            
+            REQUIRED JSON STRUCTURE:
+            {
+                "executive_overview": "A high-level 300-word introduction to the field and its significance.",
+                "deep_dive_sections": [
+                    { "title": "Sub-topic Title", "content": "Extensive multi-paragraph explanation (3-4 paragraphs per sub-topic)." }
+                ],
+                "technical_glossary": [
+                    { "term": "Term Name", "definition": "Exhaustive technical definition with usage context." }
+                ],
+                "critical_analysis": "A dedicated section discussing why this topic matters, its limitations, or its historical evolution.",
+                "mastery_points": ["Highly dense fact 1", "Dense fact 2"],
+                "exam_preparation": [
+                    { "question": "High-complexity essay question", "model_answer": "Complete 5-paragraph model answer." }
+                ]
+            }`;
 
             try {
                 const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -248,74 +272,81 @@
                         model: "llama-3.3-70b-versatile",
                         messages: [
                             { role: "system", content: systemPrompt },
-                            { role: "user", content: `Subject: ${plan.subject}. Topic: ${chapter.title}. Context: ${chapter.details}` }
+                            { role: "user", content: `Subject: ${plan.subject}. Topic: ${chapter.title}. Specific Details to Expand: ${chapter.details}. Generate the most extensive notes possible.` }
                         ],
-                        response_format: { type: "json_object" }
+                        response_format: { type: "json_object" },
+                        temperature: 0.6 // Slightly lower for high factual accuracy
                     })
                 });
 
-                const data = await response.json();
-                const content = JSON.parse(data.choices[0].message.content);
-                renderContent(content);
+                const result = await response.json();
+                const content = JSON.parse(result.choices[0].message.content);
+                renderDeepContent(content);
 
             } catch (err) {
                 console.error(err);
-                document.getElementById('loading').innerHTML = `<h3 style="color:red">Failed to load summary. Check API Key.</h3>`;
+                document.getElementById('loading').innerHTML = `<h3 style="color:red">Synthesis Error. Check API Connection.</h3>`;
             }
         }
 
-        function renderContent(data) {
+        function renderDeepContent(data) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('summary-content').style.display = 'block';
+            document.getElementById('status-update').innerHTML = `<i data-lucide="check-circle" size="14" style="color:var(--accent-green)"></i> Knowledge Base Ready`;
+            
             const container = document.getElementById('dynamic-text');
             let html = ``;
 
-            if (isIndic) {
-                // Indic Style Layout (Aashayam focus)
-                html += `<div class="extra-fact-box"><span class="extra-fact-tag">Author / Kavi Profile</span><p>${data.author}</p></div>`;
-                
-                html += `<h3 style="margin: 40px 0 20px; font-weight: 800; color: var(--accent-blue);">Aashayam (Chapter Summary)</h3>`;
-                html += `<div style="line-height: 2; color: #eee; font-size: 1.15rem; background: rgba(255,255,255,0.02); padding: 30px; border-radius: 20px;">${data.aashayam}</div>`;
+            // 1. Executive Overview
+            html += `<div class="section-title"><i data-lucide="info"></i> Executive Overview</div>`;
+            html += `<div class="mastery-card" style="font-size:1.1rem; border-left: 4px solid var(--accent-purple);">${data.executive_overview}</div>`;
 
-                html += `<h3 style="margin: 40px 0 20px; font-weight: 800; color: var(--accent-blue);">Key Highlights</h3>`;
-                data.key_points.forEach((p, i) => {
-                    html += `<div class="main-point"><span class="point-bullet">✦</span><div>${p}</div></div>`;
+            // 2. Technical Glossary
+            if (data.technical_glossary) {
+                html += `<div class="section-title"><i data-lucide="book-open"></i> Technical Glossary</div>`;
+                html += `<div class="definition-grid">`;
+                data.technical_glossary.forEach(item => {
+                    html += `<div class="definition-item"><strong>${item.term}</strong><p style="font-size:0.9rem; opacity:0.8;">${item.definition}</p></div>`;
                 });
-
-                html += `<h3 style="margin: 40px 0 20px; font-weight: 800; color: var(--accent-blue);">Essay & Important Questions</h3>`;
-                data.essay_questions.forEach((item, i) => {
-                    html += `<div class="definition-box">
-                        <strong style="color: var(--accent-yellow)">Q${i+1}: ${item.q}</strong>
-                        <p style="margin-top:10px; opacity: 0.9;">${item.a}</p>
-                    </div>`;
-                });
-
-                document.getElementById('initial-instruction').innerText = "Reading Mode: Literary Analysis and Aashayam focus.";
-            } else {
-                // Standard English Style (Same as before)
-                if(data.definitions) {
-                    html += `<h3 style="margin: 20px 0 10px; font-weight: 800; color: var(--accent-blue);">Key Terms</h3>`;
-                    data.definitions.forEach(d => html += `<div class="definition-box"><strong>${d.term}</strong><p>${d.definition}</p></div>`);
-                }
-                if(data.points) {
-                    html += `<h3 style="margin: 40px 0 20px; font-weight: 800; color: var(--accent-blue);">Core Concepts</h3>`;
-                    data.points.forEach((p, i) => html += `<div class="main-point"><span class="point-bullet">${(i+1)}</span><div>${p.text}</div></div>`);
-                }
-                html += `<h3 style="margin: 40px 0 20px; font-weight: 800; color: var(--accent-blue);">Analysis</h3>`;
-                html += `<div style="line-height: 1.8; color: #ccc;">${data.narrative}</div>`;
-                
-                document.getElementById('start-quiz-btn').style.display = 'flex';
-                window.quizPool = data.quiz_questions; 
+                html += `</div>`;
             }
+
+            // 3. Deep Dive Sections (The core exhaustive content)
+            html += `<div class="section-title"><i data-lucide="layers"></i> Deep-Dive Exploration</div>`;
+            data.deep_dive_sections.forEach(section => {
+                html += `
+                <div class="mastery-card">
+                    <h3 style="margin-bottom: 15px; color: var(--accent-yellow); font-size: 1.3rem;">${section.title}</h3>
+                    <div style="color: #e0e0e0; white-space: pre-wrap;">${section.content}</div>
+                </div>`;
+            });
+
+            // 4. Critical Analysis / Pro-tip
+            html += `<div class="deep-note">
+                <span class="deep-note-label">Critical Analysis & Synthesis</span>
+                <p style="font-style: italic; opacity: 0.9;">${data.critical_analysis}</p>
+            </div>`;
+
+            // 5. Mastery Points
+            html += `<div class="section-title"><i data-lucide="check-circle-2"></i> High-Density Facts</div>`;
+            html += `<div class="mastery-card">`;
+            data.mastery_points.forEach(point => {
+                html += `<div class="point-row"><span class="point-bullet">✦</span><div>${point}</div></div>`;
+            });
+            html += `</div>`;
+
+            // 6. Exam Preparation (Essay Questions)
+            html += `<div class="section-title"><i data-lucide="award"></i> Mastery Assessment (Model Answers)</div>`;
+            data.exam_preparation.forEach((item, idx) => {
+                html += `
+                <div class="essay-box">
+                    <span class="essay-q">Question ${idx+1}: ${item.question}</span>
+                    <div class="essay-a">${item.model_answer}</div>
+                </div>`;
+            });
 
             container.innerHTML = html;
             lucide.createIcons();
-        }
-
-        function startQuiz() {
-            // Only enabled for non-Indic
-            localStorage.setItem('lumina_current_quiz', JSON.stringify(window.quizPool));
-            window.location.href = 'exams.html'; // Or show modal logic if you prefer
         }
     </script>
 </body>
