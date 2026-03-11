@@ -94,7 +94,7 @@
         }
 
         .chat-header {
-            padding: 30px 50px;
+            padding: 20px 50px;
             display: flex;
             justify-content: flex-end;
             align-items: center;
@@ -210,7 +210,7 @@
     <aside class="sidebar">
         <div class="topic-header">
             <span>Active Module</span>
-            <h2 id="active-topic-title">Loading...</h2>
+            <h2 id="active-topic-title">Initializing...</h2>
         </div>
 
         <div class="mastery-card">
@@ -253,32 +253,32 @@
         let plan = JSON.parse(localStorage.getItem('lumina_active_plan')) || { chapters: [] };
         const groqKey = localStorage.getItem('lumina_groq_key') || "";
         
-        // REFINED CHAPTER SELECTION LOGIC
+        // FIX: Prioritize forced index from dashboard
         function getActiveChapterData() {
             const forcedIndex = localStorage.getItem('lumina_current_chapter_index');
             
-            // If the dashboard passed a specific index, use it
-            if (forcedIndex !== null) {
+            if (forcedIndex !== null && forcedIndex !== undefined) {
                 const idx = parseInt(forcedIndex);
-                if (plan.chapters[idx]) {
+                if (plan.chapters && plan.chapters[idx]) {
+                    console.log("Loading specific chapter from index:", idx);
                     return { chapter: plan.chapters[idx], index: idx };
                 }
             }
             
-            // Otherwise find the first uncompleted chapter
-            const firstUnfinished = plan.chapters.findIndex(c => !c.completed);
+            // Fallback: First unfinished
+            const firstUnfinished = plan.chapters ? plan.chapters.findIndex(c => !c.completed) : -1;
             if (firstUnfinished !== -1) {
                 return { chapter: plan.chapters[firstUnfinished], index: firstUnfinished };
             }
 
-            // Absolute fallback
-            return { chapter: plan.chapters[0], index: 0 };
+            return { chapter: plan.chapters ? plan.chapters[0] : null, index: 0 };
         }
 
         const activeData = getActiveChapterData();
         const activeChapter = activeData.chapter;
         const activeChapterIndex = activeData.index;
 
+        // Enhanced progression logic
         const milestones = [
             "Chapter Overview & Scope",
             "Definitions & Core Concepts",
@@ -328,33 +328,41 @@
             document.getElementById('active-topic-title').innerText = activeChapter.title;
             updateProgressUI();
 
+            // Socratic logic setup
             const systemPrompt = `
-                You are Lumina, an elite Socratic Tutor. Your objective is to help the student achieve absolute mastery of the following chapter content.
+                You are Lumina, an elite Socratic Tutor. achievement of absolute mastery is the goal.
                 
                 ACTIVE CHAPTER: "${activeChapter.title}"
-                CHAPTER CONTEXT: "${activeChapter.details}"
+                CHAPTER DETAILS: "${activeChapter.details}"
                 
-                INSTRUCTIONS:
-                1. Focus ONLY on this chapter's content.
-                2. Current milestone: ${milestones[currentMilestoneIndex]}.
-                3. Use the Socratic method: guide the student through questions, don't just lecture.
-                4. Teach one sub-concept at a time from the "CHAPTER CONTEXT" provided.
-                
-                FLOW COMMANDS:
-                - When the student has mastered the current milestone, output "[ADVANCE]" followed by your next instruction.
-                - When the ENTIRE chapter context is mastered, output "[SESSION_COMPLETE]".
+                YOUR PEDAGOGICAL PROTOCOL:
+                1. Always start by listing ALL topics/sub-points covered in this chapter to define the "Overview & Scope".
+                2. Progression is strictly milestone-based:
+                   - MILESTONE 1: Overview & Scope (Intro all topics).
+                   - MILESTONE 2: Definitions & Core Concepts (What are they?).
+                   - MILESTONE 3: Detailed Mechanisms (How do they work/interact?).
+                   - MILESTONE 4: Synthesis (Critical thinking/Application).
+                   - MILESTONE 5: Mastery (Final review).
+                3. Do not lecture. Ask probing questions to lead the student to the answer.
+                4. When you feel the student has demonstrated sufficient understanding of the CURRENT milestone, output "[ADVANCE]" followed by the transition.
+                5. When everything is finished, output "[SESSION_COMPLETE]".
+
+                CURRENT MILESTONE: ${milestones[currentMilestoneIndex]}
             `;
 
             chatHistory.push({ role: "system", content: systemPrompt });
             
-            // Initial Greeting
-            appendMessage('ai', `Welcome back. We are focusing on: ${activeChapter.title}. Let's begin by looking at the big picture of this topic. What do you already know about this area?`);
-            chatHistory.push({ role: "assistant", content: `Welcome back. We are focusing on: ${activeChapter.title}. Let's begin by looking at the big picture of this topic. What do you already know about this area?` });
+            // Generate the first syllabus-aware message
+            await callGroq("Please introduce the chapter, list the topics we will cover based on the details, and start the 'Overview & Scope' milestone.");
         }
 
-        async function callGroq() {
+        async function callGroq(forcedPrompt = null) {
             const typing = document.getElementById('typing-indicator');
             typing.style.display = 'block';
+
+            if (forcedPrompt) {
+                chatHistory.push({ role: "user", content: forcedPrompt });
+            }
 
             try {
                 const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -366,22 +374,22 @@
                     body: JSON.stringify({
                         model: "llama-3.3-70b-versatile",
                         messages: chatHistory,
-                        temperature: 0.3, 
-                        max_tokens: 800
+                        temperature: 0.4, 
+                        max_tokens: 1000
                     })
                 });
 
                 const data = await response.json();
                 let aiMsg = data.choices[0].message.content;
                 
-                // Handle progression logic
+                // Process ADVANCE signal
                 if (aiMsg.includes("[ADVANCE]")) {
                     aiMsg = aiMsg.replace("[ADVANCE]", "").trim();
                     if (currentMilestoneIndex < milestones.length - 1) {
                         currentMilestoneIndex++;
                         updateProgressUI();
-                        // Update system context with new phase
-                        chatHistory[0].content = chatHistory[0].content.replace(/Current milestone: .*/, `Current milestone: ${milestones[currentMilestoneIndex]}`);
+                        // Update the system instruction in history so AI knows the new stage
+                        chatHistory[0].content = chatHistory[0].content.replace(/CURRENT MILESTONE: .*/, `CURRENT MILESTONE: ${milestones[currentMilestoneIndex]}`);
                     }
                 }
 
@@ -452,8 +460,6 @@
         }
 
         function handleExit() {
-            // Clean up the index so it doesn't accidentally "stick" to the next session 
-            // until the user clicks a new specific chapter.
             localStorage.removeItem('lumina_current_chapter_index');
             window.location.href = 'dashboard.html';
         }
