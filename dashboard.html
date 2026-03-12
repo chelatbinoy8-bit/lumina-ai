@@ -75,8 +75,11 @@
             display: flex; align-items: center; justify-content: center; flex-shrink: 0;
             transition: 0.2s;
         }
-        .check.done { background: var(--accent-purple); }
-        .check.done::after { content: '✓'; color: white; font-weight: bold; }
+        .check.done { background: var(--accent-purple); border-color: var(--accent-purple); }
+        .check.done::after { content: '✓'; color: white; font-weight: bold; font-size: 14px; }
+
+        .chapter-title-text { font-weight: 800; font-size: 1.15rem; margin-bottom: 4px; color: var(--text-main); }
+        .chapter-tagline { font-size: 0.85rem; color: var(--accent-blue); font-weight: 600; opacity: 0.9; letter-spacing: 0.3px; text-transform: uppercase; }
 
         .study-modes {
             display: grid;
@@ -164,8 +167,8 @@
     <div class="dashboard">
         <div class="header">
             <div>
-                <h1 id="subTitle" style="font-size: 2rem; font-weight: 800; letter-spacing: -1px;">Learning Hub</h1>
-                <p id="dateTarget" style="color: var(--accent-blue); font-size: 0.85rem; font-weight: 600; margin-top: 5px;"></p>
+                <h1 id="subTitle" style="font-size: 2.2rem; font-weight: 800; letter-spacing: -1.5px;">Learning Hub</h1>
+                <p id="dateTarget" style="color: var(--accent-blue); font-size: 0.8rem; font-weight: 700; margin-top: 5px; text-transform: uppercase; letter-spacing: 1px;"></p>
             </div>
             <div class="nav-controls">
                 <button class="btn-secondary btn-danger" onclick="deleteActivePlan()">
@@ -196,15 +199,14 @@
         </div>
 
         <div class="section-title">
-            <i data-lucide="book-open" size="20"></i>
-            Your Curriculum
+            <i data-lucide="layout" size="20"></i>
+            Curriculum Roadmap
         </div>
 
         <div id="list" class="chapter-container"></div>
     </div>
 
     <script>
-        // Load initial plan
         let plan = JSON.parse(localStorage.getItem('lumina_active_plan'));
         if(!plan) window.location.href = 'student-home.html';
 
@@ -218,7 +220,7 @@
 
         function render() {
             document.getElementById('subTitle').innerText = plan.subject;
-            document.getElementById('dateTarget').innerText = "TARGET COMPLETION: " + plan.targetDate;
+            document.getElementById('dateTarget').innerText = "Target Completion: " + (plan.targetDate || "N/A");
             
             const list = document.getElementById('list');
             list.innerHTML = '';
@@ -230,30 +232,33 @@
                 item.className = 'chapter-item';
                 if(ch.completed) item.style.borderLeft = '4px solid var(--accent-purple)';
                 
+                // FALLBACK: If tagline doesn't exist yet, we show a brief snippet of details
+                const tagline = ch.tagline || (ch.details ? ch.details.substring(0, 60) + "..." : "Deep study module");
+
                 item.innerHTML = `
                     <div class="chapter-main">
                         <div class="check ${ch.completed ? 'done' : ''}" onclick="toggle(${i})"></div>
                         <div style="flex: 1;">
-                            <div style="font-weight: 800; font-size: 1.1rem; margin-bottom: 4px;">${ch.title}</div>
-                            <div style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.4;">${ch.details}</div>
+                            <div class="chapter-title-text">${ch.title}</div>
+                            <div class="chapter-tagline">${tagline}</div>
                         </div>
                     </div>
                     <div class="study-modes">
                         <button onclick='navigateWithContext("aichat.html", ${i})' class="mode-btn ${isIndic ? 'disabled' : ''}">
                             <i data-lucide="message-circle" size="20"></i>
-                            <span>Socratic Tutoring</span>
+                            <span>Socratic Tutor</span>
                         </button>
                         <button onclick='navigateWithContext("knowledge-graphs.html", ${i})' class="mode-btn ${isIndic ? 'disabled' : ''}">
                             <i data-lucide="git-branch" size="20"></i>
-                            <span>Knowledge Graph</span>
+                            <span>Concept Map</span>
                         </button>
                         <button onclick='navigateWithContext("summaries.html", ${i})' class="mode-btn">
                             <i data-lucide="file-text" size="20"></i>
-                            <span>Cornell Notes</span>
+                            <span>Mastery Notes</span>
                         </button>
                         <button onclick='navigateWithContext("flashcards.html", ${i})' class="mode-btn ${isIndic ? 'disabled' : ''}">
                             <i data-lucide="layers" size="20"></i>
-                            <span>SRS Deck</span>
+                            <span>SRS Flashcards</span>
                         </button>
                         <button onclick='navigateWithContext("exams.html", ${i})' class="mode-btn">
                             <i data-lucide="medal" size="20"></i>
@@ -271,22 +276,18 @@
             lucide.createIcons();
         }
 
-        /**
-         * UPDATED NAVIGATION LOGIC
-         * Ensures the specific clicked chapter becomes the active one for the next page
-         */
         function navigateWithContext(url, index) {
             if (isIndic && (url === "aichat.html" || url === "knowledge-graphs.html" || url === "flashcards.html")) return;
             
             const currentPlan = JSON.parse(localStorage.getItem('lumina_active_plan'));
             const chapter = currentPlan.chapters[index];
             
-            // Set context for the receiver (Socratic Tutor, etc)
+            // Persist the current index for the receiving pages
+            localStorage.setItem('lumina_active_chapter_index', index);
+            
+            // Update context in plan object
             currentPlan.currentChapter = chapter.title;
             currentPlan.currentDetails = chapter.details;
-            
-            // Update plan state so receivers find this chapter immediately
-            localStorage.setItem('lumina_active_chapter_index', index);
             localStorage.setItem('lumina_active_plan', JSON.stringify(currentPlan));
             
             window.location.href = url;
@@ -296,7 +297,6 @@
             plan.chapters[i].completed = !plan.chapters[i].completed;
             localStorage.setItem('lumina_active_plan', JSON.stringify(plan));
             
-            // Also sync back to the master list if needed
             let allPlans = JSON.parse(localStorage.getItem('lumina_plans_list')) || [];
             const planIdx = allPlans.findIndex(p => p.subject === plan.subject);
             if(planIdx !== -1) {
@@ -308,7 +308,7 @@
         }
 
         function deleteActivePlan() {
-            if(!confirm("Are you sure you want to permanently delete this study plan? This cannot be undone.")) return;
+            if(!confirm("Are you sure you want to permanently delete this study plan?")) return;
 
             const activePlan = JSON.parse(localStorage.getItem('lumina_active_plan'));
             let allPlans = JSON.parse(localStorage.getItem('lumina_plans_list')) || [];
