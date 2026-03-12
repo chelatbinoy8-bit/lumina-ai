@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumina | Study Plus Maker</title>
+    <title>Lumina | Study Plan Maker</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -174,7 +174,7 @@
 
         <div class="step" id="step2">
             <h2>Import Content</h2>
-            <p class="subtitle">Upload your full .txt file. Llama 3 will map out every single chapter without compression.</p>
+            <p class="subtitle">Upload your full .txt file. Llama 3 will map every single chapter exactly as written.</p>
             <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
                 <i data-lucide="upload-cloud" size="48" style="color: var(--accent-blue); margin-bottom: 15px;"></i>
                 <div style="font-weight: 700;">Select .txt File</div>
@@ -221,18 +221,19 @@
             
             updateStatus("Mapping Complete Roadmap...", 30);
 
-            const systemPrompt = `You are a precision academic extraction engine.
-            Return ONLY a JSON object with a 'chapters' array. Each item must have:
-            - 'title': The chapter name.
-            - 'tagline': A 1-sentence summary/excerpt for the dashboard preview.
-            - 'details': The COMPLETE, VERBATIM, 100% UNEDITED text from the source.
-            - 'completed': false.
-            
-            STRICT RULES:
-            1. READ EVERYTHING: If there are 10 chapters, extract 10 chapters. Do not truncate the list.
-            2. NO COMPRESSION: The 'details' field must contain every single word from that section. Do not summarize.
-            3. DUAL LAYER: Use 'tagline' for the short version and 'details' for the full version.
-            4. LANGUAGE: If the input is in Hindi/Malayalam, translate the 'tagline' and 'details' into English while maintaining 100% length.`;
+            // REFINED PROMPT: Focuses on structure and verbatim detail rather than summary.
+            const systemPrompt = `You are a High-Fidelity Academic Transcriber. 
+            Your goal is to transform a raw text file into a structured curriculum without losing ANY information.
+
+            OUTPUT FORMAT: 
+            Return ONLY a JSON object: {"chapters": [{"title": "...", "tagline": "...", "details": "...", "completed": false}]}.
+
+            EXTRACTION RULES:
+            1. DO NOT SKIP: You must identify and extract EVERY chapter/section in the provided text. If there are 6 chapters, I expect exactly 6 items in the JSON array.
+            2. VERBATIM DETAILS: The 'details' field must contain the FULL, ORIGINAL, UNABRIDGED text for that chapter. Do not summarize the content. Copy it word-for-word.
+            3. PREVIEW TAGLINE: Create a short (max 12 words) punchy tagline for the dashboard preview.
+            4. HIERARCHY: If you see headers like "Chapter 1", "Section 2", etc., use those as titles.
+            5. LANGUAGE: If the input text is not in English (e.g., Malayalam/Hindi), keep the 'details' in the original language but translate the 'tagline' and 'title' to English for the UI.`;
 
             try {
                 const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -245,11 +246,11 @@
                         model: "llama-3.3-70b-versatile",
                         messages: [
                             { role: "system", content: systemPrompt },
-                            { role: "user", content: `Subject: ${subject}. Goal Date: ${date}. \n\nEXTRACT EVERY SINGLE CHAPTER FULLY: \n\n${syllabus}` }
+                            { role: "user", content: `Subject: ${subject}\n\nCONTENT TO EXTRACT FULLY:\n${syllabus}` }
                         ],
                         response_format: { type: "json_object" },
-                        temperature: 0.1,
-                        max_tokens: 8000 // Prevents premature cutoff for long notes
+                        temperature: 0, // Set to 0 for maximum reliability/consistency
+                        max_tokens: 16000 // Increased limit to ensure no cutoff on long notes
                     })
                 });
 
@@ -259,6 +260,9 @@
                 
                 const planData = JSON.parse(rawData.choices[0].message.content);
                 
+                // Final check to ensure we didn't get an empty array
+                if(!planData.chapters || planData.chapters.length === 0) throw new Error("No chapters detected. Check file content.");
+
                 localStorage.setItem('lumina_active_plan', JSON.stringify({
                     subject: subject,
                     targetDate: date,
@@ -266,9 +270,10 @@
                 }));
 
                 updateStatus("Engine Synced. Redirecting...", 100);
-                setTimeout(() => window.location.href = 'dashboard.html', 1200);
+                setTimeout(() => window.location.href = 'dashboard.html', 1000);
 
             } catch (e) {
+                console.error(e);
                 document.getElementById('errorDisplay').innerText = "Engine Error: " + e.message;
                 document.getElementById('errorDisplay').style.display = 'block';
                 updateStatus("Extraction Failed.", 0);
