@@ -152,6 +152,7 @@
             margin-top: 20px;
             display: none;
             font-size: 0.9rem;
+            word-wrap: break-word;
         }
     </style>
 </head>
@@ -276,11 +277,12 @@
                 try {
                     await processWithGroq(text);
                 } catch (e) {
+                    console.warn("Groq failed:", e);
                     if (geminiApiKey) {
-                        updateStatus("Groq Engine exhausted. Switching to Gemini Backup...", 20);
+                        updateStatus("Groq exhausted. Switching to Gemini Backup...", 20);
                         await processWithGeminiWithRetry(text);
                     } else {
-                        showError("Groq failed (429 or Error) and no Gemini key found.");
+                        showError("Groq failed and no Gemini key found.");
                     }
                 }
             } else if (geminiApiKey) {
@@ -330,7 +332,8 @@
             updateStatus("Gemini Engine: Analyzing content...", 45);
             const subject = document.getElementById('subjectInput').value;
             
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${geminiApiKey}`;
+            // Reverted back to gemini-2.0-flash which is publicly available for personal API keys
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
             
             const makeRequest = async () => {
                 return fetch(endpoint, {
@@ -348,13 +351,16 @@
                     const response = await makeRequest();
                     
                     if (response.status === 429) {
-                        updateStatus(`Engine busy. Retrying in ${delay/1000}s...`, 45 + (i * 5));
+                        updateStatus(`Engine busy (429). Retrying in ${delay/1000}s...`, 45 + (i * 5));
                         await new Promise(res => setTimeout(res, delay));
                         delay *= 2; // Exponential backoff
                         continue;
                     }
 
-                    if (!response.ok) throw new Error("Gemini Error: " + response.status);
+                    if (!response.ok) {
+                        const errorText = await response.text(); // Get detailed error
+                        throw new Error(`Gemini Error ${response.status}: ${errorText}`);
+                    }
 
                     const data = await response.json();
                     const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -364,7 +370,11 @@
                     return;
 
                 } catch (e) {
-                    if (i === retries - 1) throw e;
+                    console.error("Gemini attempt failed:", e);
+                    if (i === retries - 1) {
+                        showError(e.message);
+                        throw e;
+                    }
                     await new Promise(res => setTimeout(res, delay));
                     delay *= 2;
                 }
@@ -398,6 +408,7 @@
             err.innerText = msg;
             err.style.display = 'block';
             updateStatus("Extraction Failed.", 0);
+            document.getElementById('progressBar').style.background = "var(--error)";
         }
     </script>
 </body>
